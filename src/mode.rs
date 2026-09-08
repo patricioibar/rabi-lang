@@ -1,5 +1,6 @@
 use crate::Args;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Mode {
     Scanning,
     Parsing,
