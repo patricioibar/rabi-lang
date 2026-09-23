@@ -4,7 +4,9 @@ use clap::Parser;
 
 use crate::mode::Mode;
 
+mod expression;
 mod mode;
+mod parser;
 mod scanner;
 mod token;
 
@@ -58,6 +60,14 @@ fn run(line: String, mode: &Mode) -> Result<(), String> {
     if mode == &Mode::Scanning {
         for token in tokens {
             println!("{:?}", token);
+        }
+        return Ok(());
+    }
+
+    let expressions = parser::parse(tokens)?;
+    if mode == &Mode::Parsing {
+        for expression in expressions {
+            println!("{:?}", expression);
         }
         return Ok(());
     }

@@ -166,4 +166,15 @@ impl Token {
             }
         }
     }
+
+    pub fn is_literal(&self) -> bool {
+        matches!(
+            self,
+            Token::Integer(_)
+                | Token::Decimal(_)
+                | Token::StringLiteral(_)
+                | Token::True
+                | Token::False
+        )
+    }
 }
