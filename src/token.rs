@@ -1,4 +1,6 @@
-#[derive(Debug)]
+use std::matches;
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     // Literals
     Identifier(String),
@@ -35,6 +37,8 @@ pub enum Token {
     Else,
     While,
     For,
+    Break,
+    Continue,
     Function,
     Return,
     Let,
@@ -42,6 +46,8 @@ pub enum Token {
     // Special Tokens
     Eof,
     NewLine,
+    Indent,
+    Dedent,
 }
 
 type Cursor = std::iter::Peekable<std::str::Chars<'static>>;
@@ -52,6 +58,7 @@ impl Token {
             match cursor.next() {
                 Some(c) => {
                     let token = match c {
+                        '\t' => Token::Tab,
                         c if c.is_whitespace() => continue,
                         ',' => Token::Comma,
                         '+' => Token::Plus,
@@ -62,7 +69,6 @@ impl Token {
                         '(' => Token::LeftParen,
                         ')' => Token::RightParen,
                         ':' => Token::Colon,
-                        '\t' => Token::Tab,
                         '<' => match cursor.peek() {
                             Some('=') => {
                                 cursor.next();
@@ -86,21 +92,26 @@ impl Token {
                         },
                         '"' => {
                             let mut string_literal = String::new();
-                            while let Some(&next) = cursor.peek() {
+                            let mut terminated = false;
+                            while let Some(next) = cursor.next() {
                                 if next == '"' {
-                                    cursor.next(); // Consume the closing quote
+                                    terminated = true;
                                     break;
-                                } else {
-                                    string_literal.push(next);
-                                    cursor.next();
                                 }
+                                string_literal.push(next);
+                            }
+                            if !terminated {
+                                return Err(format!(
+                                    "Unterminated string literal: \"{}",
+                                    string_literal
+                                ));
                             }
                             Token::StringLiteral(string_literal)
                         }
-                        c if c.is_ascii_alphabetic() || c == '_' => {
+                        c if c.is_alphabetic() || c == '_' => {
                             let mut word = String::from(c);
                             while let Some(&next) = cursor.peek() {
-                                if next.is_ascii_alphanumeric() || next == '_' {
+                                if next.is_alphanumeric() || next == '_' {
                                     word.push(next);
                                     cursor.next();
                                 } else {
@@ -116,6 +127,8 @@ impl Token {
                                 "else" => Token::Else,
                                 "while" => Token::While,
                                 "for" => Token::For,
+                                "break" => Token::Break,
+                                "continue" => Token::Continue,
                                 "func" => Token::Function,
                                 "return" => Token::Return,
                                 "let" => Token::Let,
@@ -158,7 +171,9 @@ impl Token {
                             }
                             continue; // Skip to the next iteration to get the next token
                         }
-                        _ => return Ok(None), // Unrecognized character
+                        _ => {
+                            return Err(format!("Unrecognized character: '{}'", c));
+                        }
                     };
                     return Ok(Some(token));
                 }
