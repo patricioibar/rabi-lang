@@ -93,7 +93,7 @@ impl Token {
                         '"' => {
                             let mut string_literal = String::new();
                             let mut terminated = false;
-                            while let Some(next) = cursor.next() {
+                            for next in cursor.by_ref() {
                                 if next == '"' {
                                     terminated = true;
                                     break;

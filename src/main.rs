@@ -39,7 +39,7 @@ fn main() -> Result<(), i32> {
 fn inline_mode(mode: Mode) -> Result<(), i32> {
     let input = BufReader::new(std::io::stdin());
     let mut lines = input.lines();
-    Ok(loop {
+    loop {
         print!("> ");
         std::io::stdout().flush().map_err(|_| 1)?;
         let Some(line) = lines.next().transpose().map_err(|e| {
@@ -53,7 +53,8 @@ fn inline_mode(mode: Mode) -> Result<(), i32> {
             eprintln!("Error processing line: {}", e);
             3
         })?;
-    })
+    };
+    Ok(())
 }
 
 fn run_line(line: String, mode: &Mode) -> Result<(), String> {
