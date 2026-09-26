@@ -1,13 +1,13 @@
-use std::io::Cursor;
+use crate::{statement::Statement, token::Token};
 
-use crate::{expression::Expression, token::Token};
-
-pub fn parse(tokens: Vec<Token>) -> Result<Vec<Expression>, String> {
-    let mut cursor = Cursor::new(tokens).into_inner().into_iter().peekable();
-    let mut expressions = Vec::new();
-    while cursor.peek().is_some() {
-        let expression = Expression::get_next(&mut cursor)?;
-        expressions.push(expression);
+pub fn parse(tokens: Vec<Token>) -> Result<Vec<Statement>, String> {
+    let mut cursor = tokens.into_iter().peekable();
+    let mut statements = Vec::new();
+    loop {
+        Statement::skip_blank_lines(&mut cursor);
+        match cursor.peek() {
+            Some(Token::Eof) | None => return Ok(statements),
+            _ => statements.push(Statement::get_next(&mut cursor)?),
+        }
     }
-    Ok(expressions)
 }
