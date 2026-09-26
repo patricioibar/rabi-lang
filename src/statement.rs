@@ -280,8 +280,6 @@ impl Statement {
     }
 }
 
-
-
 fn is_statement_terminator(token: Option<&Token>) -> bool {
     matches!(
         token,
