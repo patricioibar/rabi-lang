@@ -20,6 +20,7 @@ pub enum Token {
     Equal,
     Bang,
     BangEqual,
+    EqualEqual,
     Less,
     LessEqual,
     Greater,
@@ -65,10 +66,16 @@ impl Token {
                         '-' => Token::Minus,
                         '*' => Token::Asterisk,
                         '/' => Token::Slash,
-                        '=' => Token::Equal,
                         '(' => Token::LeftParen,
                         ')' => Token::RightParen,
                         ':' => Token::Colon,
+                        '=' => match cursor.peek() {
+                            Some('=') => {
+                                cursor.next();
+                                Token::EqualEqual
+                            }
+                            _ => Token::Equal,
+                        },
                         '<' => match cursor.peek() {
                             Some('=') => {
                                 cursor.next();
@@ -136,10 +143,10 @@ impl Token {
                             };
                             return Ok(Some(token));
                         }
-                        c if c.is_numeric() => {
+                        c if c.is_ascii_digit() => {
                             let mut number = String::from(c);
                             while let Some(&next) = cursor.peek() {
-                                if next.is_numeric() || next == '.' {
+                                if next.is_ascii_digit() || next == '.' {
                                     number.push(next);
                                     cursor.next();
                                 } else {
