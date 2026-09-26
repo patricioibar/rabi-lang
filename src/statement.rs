@@ -1,5 +1,6 @@
 use crate::{expression::Expression, token::Token};
 
+#[derive(Debug, PartialEq)]
 pub enum Statement {
     ExpressionStatement(Expression),
     PrintStatement(Expression),
@@ -32,6 +33,8 @@ type TokenCursor = std::iter::Peekable<std::vec::IntoIter<Token>>;
 
 impl Statement {
     pub fn get_next(cursor: &mut TokenCursor) -> Result<Self, String> {
+        Self::skip_blank_lines(cursor);
+
         let stmt = if let Some(token) = cursor.peek() {
             match token {
                 Token::Let => {
@@ -40,15 +43,15 @@ impl Statement {
                 }
                 Token::Function => {
                     cursor.next();
-                    Self::function_declaration(cursor)?
+                    return Self::function_declaration(cursor);
                 }
                 Token::If => {
                     cursor.next();
-                    Self::if_statement(cursor)?
+                    return Self::if_statement(cursor);
                 }
                 Token::While => {
                     cursor.next();
-                    Self::while_statement(cursor)?
+                    return Self::while_statement(cursor);
                 }
                 Token::For => {
                     cursor.next();
@@ -76,10 +79,7 @@ impl Statement {
             return Err("Unexpected end of input while parsing statement".to_string());
         };
 
-        if !matches!(
-            cursor.peek(),
-            Some(Token::NewLine) | Some(Token::Eof) | None
-        ) {
+        if !is_statement_terminator(cursor.peek()) {
             return Err(format!(
                 "Expected newline or end of file after statement, found {:?}",
                 cursor.peek()
@@ -89,6 +89,12 @@ impl Statement {
             cursor.next();
         }
         Ok(stmt)
+    }
+
+    pub fn skip_blank_lines(cursor: &mut TokenCursor) {
+        while cursor.peek() == Some(&Token::NewLine) {
+            cursor.next();
+        }
     }
 
     fn variable_declaration(cursor: &mut TokenCursor) -> Result<Self, String> {
@@ -245,9 +251,10 @@ impl Statement {
     }
 
     fn return_statement(cursor: &mut TokenCursor) -> Result<Self, String> {
-        let value = match cursor.peek() {
-            Some(Token::NewLine) | Some(Token::Eof) | None => None,
-            _ => Some(Expression::get_next(cursor)?),
+        let value = if is_statement_terminator(cursor.peek()) {
+            None
+        } else {
+            Some(Expression::get_next(cursor)?)
         };
 
         Ok(Statement::ReturnStatement { value })
@@ -255,13 +262,14 @@ impl Statement {
 
     fn block(cursor: &mut TokenCursor) -> Result<Vec<Self>, String> {
         let mut statements = Vec::new();
-        while let Some(token) = cursor.peek() {
-            match token {
-                Token::Dedent => {
+        loop {
+            Self::skip_blank_lines(cursor);
+            match cursor.peek() {
+                Some(Token::Dedent) => {
                     cursor.next();
                     break;
                 }
-                Token::Eof => break,
+                Some(Token::Eof) | None => break,
                 _ => {
                     let stmt = Self::get_next(cursor)?;
                     statements.push(stmt);
@@ -270,4 +278,13 @@ impl Statement {
         }
         Ok(statements)
     }
+}
+
+
+
+fn is_statement_terminator(token: Option<&Token>) -> bool {
+    matches!(
+        token,
+        Some(Token::NewLine) | Some(Token::Eof) | Some(Token::Dedent) | Some(Token::Else) | None
+    )
 }
