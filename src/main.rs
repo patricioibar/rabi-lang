@@ -2,7 +2,7 @@ use std::io::{BufRead, BufReader, Write};
 
 use clap::Parser;
 
-use rabi_lang::{parser, scanner};
+use rabi_lang::{parser, scanner, token::Token};
 
 use crate::mode::Mode;
 
@@ -49,29 +49,14 @@ fn inline_mode(mode: Mode) -> Result<(), i32> {
         else {
             break;
         };
-        run_line(line, &mode).map_err(|e| {
+        let tokens = scanner::scan_line(line).map_err(|e| {
+            eprintln!("Error scanning line: {}", e);
+            2
+        })?;
+        run_tokens(tokens, &mode).map_err(|e| {
             eprintln!("Error processing line: {}", e);
             3
         })?;
-    };
-    Ok(())
-}
-
-fn run_line(line: String, mode: &Mode) -> Result<(), String> {
-    let tokens = scanner::scan_line(line)?;
-    if mode == &Mode::Scanning {
-        for token in tokens {
-            println!("{:?}", token);
-        }
-        return Ok(());
-    }
-
-    let expressions = parser::parse(tokens)?;
-    if mode == &Mode::Parsing {
-        for expression in expressions {
-            println!("{:?}", expression);
-        }
-        return Ok(());
     }
     Ok(())
 }
@@ -81,16 +66,30 @@ fn file_mode(filename: &str, mode: Mode) -> Result<(), i32> {
         eprintln!("Error opening file {}: {}", filename, e);
         1
     })?;
-    let reader = BufReader::new(file);
-    for line in reader.lines() {
-        let line = line.map_err(|e| {
-            eprintln!("Error reading line from file {}: {}", filename, e);
-            2
-        })?;
-        run_line(line, &mode).map_err(|e| {
-            eprintln!("Error processing line from file {}: {}", filename, e);
-            3
-        })?;
+    let tokens = scanner::scan_file(BufReader::new(file)).map_err(|e| {
+        eprintln!("Error scanning file {}: {}", filename, e);
+        2
+    })?;
+    run_tokens(tokens, &mode).map_err(|e| {
+        eprintln!("Error processing file {}: {}", filename, e);
+        3
+    })
+}
+
+fn run_tokens(tokens: Vec<Token>, mode: &Mode) -> Result<(), String> {
+    if mode == &Mode::Scanning {
+        for token in tokens {
+            println!("{:?}", token);
+        }
+        return Ok(());
+    }
+
+    let statements = parser::parse(tokens)?;
+    if mode == &Mode::Parsing {
+        for statement in statements {
+            println!("{:?}", statement);
+        }
+        return Ok(());
     }
     Ok(())
 }
