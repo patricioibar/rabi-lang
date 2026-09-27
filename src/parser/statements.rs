@@ -123,6 +123,7 @@ fn block_body(cursor: &mut Cursor, context: &str) -> Result<Vec<Statement>, Stri
     cursor.expect(&Token::Colon, context)?;
 
     if cursor.accept(&Token::NewLine) {
+        cursor.skip_blank_lines();
         cursor.expect(&Token::Indent, "after ':'")?;
         indented_block(cursor)
     } else {
