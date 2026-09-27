@@ -1,0 +1,28 @@
+print "--- IFs ---"
+
+if true:
+    print "OK"
+else:
+    print "ERROR"
+
+if false:
+    print "ERROR"
+else:
+    print "OK"
+
+
+print "--- WHILEs ---"
+let i = 0
+let match = 0
+while i <= 3:
+    match = i
+    i = i + 1
+
+
+if match == 3:
+    print "OK"
+else:
+    print "ERROR"
+
+
+# for loops are not implemented on purpose yet

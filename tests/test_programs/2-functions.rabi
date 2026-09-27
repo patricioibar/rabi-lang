@@ -1,0 +1,64 @@
+func assert(input, expected):
+    if (input != expected):
+        print "ERROR"
+    else:
+        print "OK"
+
+print "--- SCOPE HANDLING ---"
+let x = 0
+let y = 0
+assert(x, 0)
+assert(y, 0)
+if true:
+    let x = 1
+    y = 1
+    assert(x, 1)
+    assert(y, 1)
+    if true:
+        let z = 1
+        assert(z, 1)
+        let y = 3
+        assert(y, 3)
+    if true:
+        let z = 2
+        assert(z, 2)
+assert(x, 0)
+assert(y, 1)
+
+print "--- SIMPLE FUNCTION USAGE ---"
+func fib(n):
+    if (n <= 1): return n
+    return fib(n-2) + fib(n-1)
+
+func noreturn(): "does nothing"
+
+func emptyreturn():
+    return
+
+assert(fib(20), 6765)
+assert(noreturn(), null)
+assert(emptyreturn(), null)
+
+
+# Nested functions does not exists in rabi lang
+# so something like this will not work
+# func make_counter():
+#     let i = 0
+#    func count():
+#        i = i + 1
+#        return i
+#    return count
+
+print "--- VARIABLE SHADOWING ---"
+let a = 1
+assert(a, 1)
+
+if true:
+    let a = 2
+    assert(a, 2)
+
+assert(a, 1)
+
+if true:
+    let a = 3
+    assert(a, 3)
