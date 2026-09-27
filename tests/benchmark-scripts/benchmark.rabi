@@ -1,0 +1,29 @@
+let cycles = 1000000
+let count = 0
+let acum = 0.0
+let result_text = ""
+let status = true
+
+let i = 0
+while i < cycles:
+    
+    count = count + 1
+    
+    acum = acum + 0.5
+    
+    if i % 2 == 0:
+        status = true
+    else:
+        status = false
+    
+    if status == true:
+        result_text = "par"
+    else:
+        result_text = "impar"
+    
+    i = i + 1
+
+print count
+print acum
+print result_text
+print status
