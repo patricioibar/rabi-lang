@@ -43,6 +43,9 @@ pub(super) fn statement(cursor: &mut Cursor) -> Result<Statement, String> {
             let expr = expression(cursor)?;
             Statement::PrintStatement(expr)
         }
+        Some(Token::Indent) | Some(Token::Dedent) => {
+            return Err("Unexpected indentation at start of statement".to_string());
+        }
         Some(_) => Statement::ExpressionStatement(expression(cursor)?),
         None => return Err("Unexpected end of input while parsing statement".to_string()),
     };
