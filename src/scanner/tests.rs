@@ -1,8 +1,12 @@
 //! Tests for the Scanner's char-level implementation. These reach an internal
-//! seam: `tokenize` is not part of the Scanner's interface.
+//! seam: neither `tokenize` nor `split_indentation` is part of the Scanner's
+//! interface.
 
 use crate::{
-    scanner::tokenizer::{next_token, tokenize},
+    scanner::{
+        split_indentation,
+        tokenizer::{next_token, tokenize},
+    },
     token::Token,
 };
 
@@ -30,8 +34,8 @@ fn spaces_and_newlines_are_skipped() {
 
 #[test]
 fn tabs_are_whitespace_to_the_tokenizer() {
-    // Indentation is the Scanner's concern: it takes the leading tabs off the
-    // line and turns them into Indent/Dedent before the tokenizer sees it.
+    // Indentation is the Scanner's concern,
+    // it transforms leading whitespaces into indent and dedent tokens
     assert_eq!(tokenize("\t\t").unwrap(), vec![]);
 }
 
@@ -726,4 +730,54 @@ fn equality_compares_payloads() {
     assert_ne!(Token::Identifier("a".into()), Token::Identifier("b".into()));
     assert_ne!(Token::Integer(1), Token::Decimal(1.0));
     assert_ne!(Token::True, Token::False);
+}
+
+// --- Indentation ---
+
+#[test]
+fn one_level_is_a_tab_or_four_spaces() {
+    for indent in [
+        "",
+        "\t",
+        "    ",
+        "\t\t",
+        "        ",
+        "\t\t\t",
+        "            ",
+    ] {
+        let expected = indent.len() / if indent.starts_with('\t') { 1 } else { 4 };
+        let line = format!("{indent}let x = 1");
+        let (depth, rest) = split_indentation(&line).unwrap();
+        assert_eq!(depth, expected, "depth of {indent:?}");
+        assert_eq!(rest, "let x = 1", "rest after {indent:?}");
+    }
+}
+
+#[test]
+fn tabs_and_spaces_give_the_same_depth() {
+    for (tabs, spaces) in [("\tx", "    x"), ("\t\tx", "        x")] {
+        assert_eq!(
+            split_indentation(tabs).unwrap(),
+            split_indentation(spaces).unwrap()
+        );
+    }
+}
+
+#[test]
+fn mixing_tabs_and_spaces_in_one_indent_is_rejected() {
+    for line in [" \tlet x = 1", "\t let x = 1"] {
+        let error = split_indentation(line).expect_err("should not split");
+        assert!(error.contains("mixes tabs and spaces"), "{line:?}: {error}");
+    }
+}
+
+#[test]
+fn spaces_that_do_not_fill_a_level_are_rejected() {
+    for (line, spaces) in [("  x", 2), ("      x", 6), ("         x", 9)] {
+        let error = split_indentation(line).expect_err("should not split");
+        assert!(
+            error.contains(&format!("{spaces} spaces is not a multiple of 4")),
+            "{line:?}: {error}"
+        );
+    }
 }
