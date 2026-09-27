@@ -86,6 +86,7 @@ pub(super) fn next_token(cursor: &mut Cursor) -> Result<Option<Token>, String> {
                             "or" => Token::Or,
                             "true" => Token::True,
                             "false" => Token::False,
+                            "null" => Token::Null,
                             "if" => Token::If,
                             "else" => Token::Else,
                             "while" => Token::While,

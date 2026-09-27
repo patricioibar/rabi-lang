@@ -9,6 +9,7 @@ pub enum Token {
     StringLiteral(String),
     True,
     False,
+    Null,
 
     // Operators
     Plus,
@@ -59,6 +60,7 @@ impl Token {
                 | Token::StringLiteral(_)
                 | Token::True
                 | Token::False
+                | Token::Null
         )
     }
 }
@@ -103,6 +105,7 @@ impl std::fmt::Display for Token {
             Token::Function => write!(f, "function"),
             Token::Return => write!(f, "return"),
             Token::Let => write!(f, "let"),
+            Token::Null => write!(f, "null"),
         }
     }
 }
