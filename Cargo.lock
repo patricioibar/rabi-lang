@@ -135,7 +135,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rabi-lang"
+name = "rabi"
 version = "0.1.0"
 dependencies = [
  "clap",

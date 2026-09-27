@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 
-use rabi_lang::{interpreter::Interpreter, parser, scanner};
+use rabi::{interpreter::Interpreter, parser, scanner};
 
 #[test]
-fn test_programs_run_without_errors() {
+fn test_integration_programs() {
     let programs = get_test_program_files();
     assert!(!programs.is_empty(), "no test programs found");
 
@@ -62,7 +62,7 @@ fn interpret_program(path: &Path) -> (String, Result<(), String>) {
 }
 
 fn get_test_program_files() -> Vec<PathBuf> {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/test_programs");
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/test-programs");
     let mut programs: Vec<PathBuf> = std::fs::read_dir(&dir)
         .unwrap_or_else(|e| panic!("could not read {}: {}", dir.display(), e))
         .map(|entry| entry.expect("could not read a directory entry").path())

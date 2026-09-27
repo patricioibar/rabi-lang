@@ -2,7 +2,7 @@ use std::io::{BufRead, BufReader, Write};
 
 use clap::Parser;
 
-use rabi_lang::{interpreter::Interpreter, parser, scanner, token::Token};
+use rabi::{interpreter::Interpreter, parser, scanner, token::Token};
 
 use crate::mode::Mode;
 
