@@ -8,25 +8,30 @@ mod runtime_test;
 #[cfg(test)]
 mod value_test;
 
+use std::io::{Stdout, Write};
+
 use crate::statement::Statement;
 
-/// A reusable interpreter. It owns the global scope, so whatever a batch of
-/// statements defines is still there for the next batch: this is what lets
-/// the REPL remember variables and functions from one line to the next.
-pub struct Interpreter {
-    runtime: runtime::Runtime,
+pub struct Interpreter<W: Write = Stdout> {
+    runtime: runtime::Runtime<W>,
 }
 
-impl Default for Interpreter {
+impl Default for Interpreter<Stdout> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Interpreter {
+impl Interpreter<Stdout> {
     pub fn new() -> Self {
+        Self::with_output(std::io::stdout())
+    }
+}
+
+impl<W: Write> Interpreter<W> {
+    pub fn with_output(output: W) -> Self {
         Interpreter {
-            runtime: runtime::Runtime::new(),
+            runtime: runtime::Runtime::new(output),
         }
     }
 

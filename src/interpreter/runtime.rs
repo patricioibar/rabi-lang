@@ -1,12 +1,16 @@
+use std::io::Write;
+
 use super::value::{Value, overflow};
 use crate::expression::Expression;
 use crate::statement::Statement;
 use crate::token::Token;
 
 use super::scope::Scope;
-pub struct Runtime {
+
+pub struct Runtime<W: Write> {
     global_scope: Scope,
     current_scope: Scope,
+    output: W,
 }
 
 const RETURN_OUTSIDE_FUNCTION: &str = "'return' outside of a function";
@@ -20,12 +24,13 @@ pub enum ControlFlow {
     None,
 }
 
-impl Runtime {
-    pub(super) fn new() -> Self {
+impl<W: Write> Runtime<W> {
+    pub(super) fn new(output: W) -> Self {
         let global_scope = Scope::new(None);
         Runtime {
             current_scope: global_scope.clone(),
             global_scope,
+            output,
         }
     }
 
@@ -69,7 +74,8 @@ impl Runtime {
             }
             Statement::PrintStatement(expression) => {
                 let value = self.evaluate_expression(expression)?;
-                println!("{}", value);
+                writeln!(self.output, "{}", value)
+                    .map_err(|e| format!("Could not write output: {}", e))?;
             }
             Statement::VariableDeclaration { name, initializer } => {
                 self.declare_variable(name, initializer)?;
@@ -344,14 +350,5 @@ fn eval_literal(value: Token) -> Result<Value, String> {
         Token::False => Ok(Value::Boolean(false)),
         Token::Null => Ok(Value::Null),
         _ => Err(format!("Unsupported literal token: {:?}", value)),
-    }
-}
-
-#[cfg(test)]
-impl Runtime {
-    /// Test-only window into the scope the runtime is standing in. After
-    /// `run_plain` over a whole program that is the global scope.
-    pub(super) fn lookup(&self, name: &str) -> Option<Value> {
-        self.current_scope.get(name)
     }
 }
