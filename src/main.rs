@@ -2,7 +2,12 @@ use std::io::{BufRead, BufReader, Write};
 
 use clap::Parser;
 
-use rabi::{interpreter::Interpreter, parser, scanner, token::Token};
+use rabi::{
+    interpreter::Interpreter,
+    parser,
+    scanner::{self, Scanner},
+    token::Token,
+};
 
 use crate::mode::Mode;
 
@@ -40,8 +45,14 @@ fn inline_mode(mode: Mode) -> Result<(), i32> {
     let input = BufReader::new(std::io::stdin());
     let mut lines = input.lines();
     let mut interpreter = Interpreter::new();
+    let mut scanner = Scanner::new();
     loop {
-        print!("> ");
+        let prompt = if scanner.is_block_open() {
+            "... "
+        } else {
+            "> "
+        };
+        print!("{}", prompt);
         std::io::stdout().flush().map_err(|_| 1)?;
         let Some(line) = lines.next().transpose().map_err(|e| {
             eprintln!("Error reading input: {}", e);
@@ -50,12 +61,20 @@ fn inline_mode(mode: Mode) -> Result<(), i32> {
         else {
             break;
         };
-        let tokens = scanner::scan(line.as_bytes());
-        let Ok(tokens) = tokens else {
-            eprintln!("Error scanning line: {}", tokens.unwrap_err());
+
+        // a blank line closes the block being typed
+        let blank = line.trim().is_empty();
+
+        if let Err(e) = scanner.scan_one_line(&line) {
+            eprintln!("Error scanning line: {}", e);
+            scanner.finish(); // drop what was typed so far
             continue;
-        };
-        if let Err(e) = run_tokens(tokens, &mode, &mut interpreter) {
+        }
+        if scanner.is_block_open() && !blank {
+            continue;
+        }
+
+        if let Err(e) = run_tokens(scanner.finish(), &mode, &mut interpreter) {
             eprintln!("Error processing line: {}", e);
         }
     }
