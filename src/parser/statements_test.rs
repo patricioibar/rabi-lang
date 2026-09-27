@@ -3,7 +3,12 @@
 //! in place for an enclosing rule to read, which is not visible through the
 //! parser's interface. Everything else is tested in `tests/parser.rs`.
 
-use crate::{expression::Expression, parser::{cursor::Cursor, statements::statement}, statement::Statement, token::Token};
+use crate::{
+    expression::Expression,
+    parser::{cursor::Cursor, statements::statement},
+    statement::Statement,
+    token::Token,
+};
 
 /// The statement every case here parses: the expression statement `1`.
 fn one() -> Statement {

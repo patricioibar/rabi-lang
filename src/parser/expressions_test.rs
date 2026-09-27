@@ -1,7 +1,12 @@
 //! Tests for the expression rules. These reach an internal seam: the rules are
 //! the parser's implementation, not its interface.
 
-use crate::{expression::Expression, parser::{cursor::Cursor, expressions::expression}, scanner::scan, token::Token};
+use crate::{
+    expression::Expression,
+    parser::{cursor::Cursor, expressions::expression},
+    scanner::scan,
+    token::Token,
+};
 
 // --- Helpers ---
 

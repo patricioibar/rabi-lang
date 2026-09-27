@@ -1,7 +1,10 @@
 //! Tests for the Scanner's char-level implementation. These reach an internal
 //! seam: `tokenize` is not part of the Scanner's interface.
 
-use crate::{scanner::tokenizer::{next_token, tokenize}, token::Token};
+use crate::{
+    scanner::tokenizer::{next_token, tokenize},
+    token::Token,
+};
 
 fn one(source: &str) -> Token {
     let tokens = tokenize(source).expect("should tokenize");
