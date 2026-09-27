@@ -130,6 +130,40 @@ impl Value {
             )),
         }
     }
+
+    pub fn modulo(&self, other: Value) -> Result<Value, String> {
+        match (self, other) {
+            (Value::Integer(a), Value::Integer(b)) => {
+                if b == 0 {
+                    return Err(DIVISION_BY_ZERO.to_string());
+                }
+                Ok(Value::Integer(a % b))
+            }
+            (Value::Decimal(a), Value::Decimal(b)) => {
+                if b == 0.0 {
+                    return Err(DIVISION_BY_ZERO.to_string());
+                }
+                Ok(Value::Decimal(a % b))
+            }
+            (Value::Integer(a), Value::Decimal(b)) => {
+                if b == 0.0 {
+                    return Err(DIVISION_BY_ZERO.to_string());
+                }
+                Ok(Value::Decimal((*a as f64) % b))
+            }
+            (Value::Decimal(a), Value::Integer(b)) => {
+                if b == 0 {
+                    return Err(DIVISION_BY_ZERO.to_string());
+                }
+                Ok(Value::Decimal(a % (b as f64)))
+            }
+            (a, b) => Err(format!(
+                "Unsupported operand types for modulo: {} and {}",
+                a.type_name(),
+                b.type_name()
+            )),
+        }
+    }
 }
 
 impl std::ops::Add for Value {

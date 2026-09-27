@@ -109,7 +109,7 @@ fn term(cursor: &mut Cursor) -> Result<Expression, String> {
 fn factor(cursor: &mut Cursor) -> Result<Expression, String> {
     let mut expr = unary(cursor)?;
 
-    while cursor.peek_any(&[Token::Asterisk, Token::Slash]) {
+    while cursor.peek_any(&[Token::Asterisk, Token::Slash, Token::Percent]) {
         let operator = cursor.advance_or_err()?;
         let right = unary(cursor)?;
         expr = Expression::Binary {

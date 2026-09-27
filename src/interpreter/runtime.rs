@@ -186,6 +186,9 @@ impl Runtime {
                 self.evaluate_expression(left)? * (self.evaluate_expression(right)?)
             }
             Token::Slash => self.evaluate_expression(left)? / (self.evaluate_expression(right)?),
+            Token::Percent => self
+                .evaluate_expression(left)?
+                .modulo(self.evaluate_expression(right)?),
             Token::EqualEqual => {
                 let res = self.evaluate_expression(left)? == (self.evaluate_expression(right)?);
                 Ok(Value::Boolean(res))

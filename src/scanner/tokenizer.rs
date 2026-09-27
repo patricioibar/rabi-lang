@@ -22,6 +22,7 @@ pub(super) fn next_token(cursor: &mut Cursor) -> Result<Option<Token>, String> {
                     '-' => Token::Minus,
                     '*' => Token::Asterisk,
                     '/' => Token::Slash,
+                    '%' => Token::Percent,
                     '(' => Token::LeftParen,
                     ')' => Token::RightParen,
                     ':' => Token::Colon,
