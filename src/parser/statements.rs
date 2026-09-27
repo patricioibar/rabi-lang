@@ -83,7 +83,11 @@ fn if_statement(cursor: &mut Cursor) -> Result<Statement, String> {
     let then_branch = block_body(cursor, "after if condition")?;
 
     let else_branch = if cursor.accept(&Token::Else) {
-        Some(block_body(cursor, "after 'else'")?)
+        if cursor.accept(&Token::If) {
+            Some(vec![if_statement(cursor)?])
+        } else {
+            Some(block_body(cursor, "after else")?)
+        }
     } else {
         None
     };
