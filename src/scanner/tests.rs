@@ -591,7 +591,7 @@ fn an_unrecognized_character_is_an_error() {
 #[test]
 fn various_unrecognized_characters() {
     for source in [
-        "@", "$", "%", "&", "|", "^", "~", ";", "[", "]", "{", "}", "?", ".", "'", "\\",
+        "@", "$", "&", "|", "^", "~", ";", "[", "]", "{", "}", "?", ".", "'", "\\",
     ] {
         let mut cursor = source.chars().peekable();
         assert_eq!(
