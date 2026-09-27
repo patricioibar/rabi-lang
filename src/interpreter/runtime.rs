@@ -238,10 +238,13 @@ impl<W: Write> Runtime<W> {
             Token::Or => {
                 let left_value = self.evaluate_expression(left)?;
                 if left_value.is_truthy() {
-                    return Ok(Value::Boolean(true));
+                    return Ok(left_value);
                 }
                 let right_value = self.evaluate_expression(right)?;
-                Ok(Value::Boolean(right_value.is_truthy()))
+                if right_value.is_truthy() {
+                    return Ok(right_value);
+                }
+                Ok(Value::Boolean(false))
             }
             _ => Err(format!("Unsupported binary operator: {:?}", operator)),
         }
