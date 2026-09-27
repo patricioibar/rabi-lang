@@ -31,7 +31,6 @@ pub enum Token {
     RightParen,
     Colon,
     Comma,
-    Tab,
 
     // Keywords
     If,
@@ -51,144 +50,7 @@ pub enum Token {
     Dedent,
 }
 
-type Cursor = std::iter::Peekable<std::str::Chars<'static>>;
-
 impl Token {
-    pub fn get_next(cursor: &mut Cursor) -> Result<Option<Self>, String> {
-        loop {
-            match cursor.next() {
-                Some(c) => {
-                    let token = match c {
-                        '\t' => Token::Tab,
-                        c if c.is_whitespace() => continue,
-                        ',' => Token::Comma,
-                        '+' => Token::Plus,
-                        '-' => Token::Minus,
-                        '*' => Token::Asterisk,
-                        '/' => Token::Slash,
-                        '(' => Token::LeftParen,
-                        ')' => Token::RightParen,
-                        ':' => Token::Colon,
-                        '=' => match cursor.peek() {
-                            Some('=') => {
-                                cursor.next();
-                                Token::EqualEqual
-                            }
-                            _ => Token::Equal,
-                        },
-                        '<' => match cursor.peek() {
-                            Some('=') => {
-                                cursor.next();
-                                Token::LessEqual
-                            }
-                            _ => Token::Less,
-                        },
-                        '>' => match cursor.peek() {
-                            Some('=') => {
-                                cursor.next();
-                                Token::GreaterEqual
-                            }
-                            _ => Token::Greater,
-                        },
-                        '!' => match cursor.peek() {
-                            Some('=') => {
-                                cursor.next();
-                                Token::BangEqual
-                            }
-                            _ => Token::Bang,
-                        },
-                        '"' => {
-                            let mut string_literal = String::new();
-                            let mut terminated = false;
-                            for next in cursor.by_ref() {
-                                if next == '"' {
-                                    terminated = true;
-                                    break;
-                                }
-                                string_literal.push(next);
-                            }
-                            if !terminated {
-                                return Err(format!(
-                                    "Unterminated string literal: \"{}",
-                                    string_literal
-                                ));
-                            }
-                            Token::StringLiteral(string_literal)
-                        }
-                        c if c.is_alphabetic() || c == '_' => {
-                            let mut word = String::from(c);
-                            while let Some(&next) = cursor.peek() {
-                                if next.is_alphanumeric() || next == '_' {
-                                    word.push(next);
-                                    cursor.next();
-                                } else {
-                                    break;
-                                }
-                            }
-                            let token = match word.as_str() {
-                                "and" => Token::And,
-                                "or" => Token::Or,
-                                "true" => Token::True,
-                                "false" => Token::False,
-                                "if" => Token::If,
-                                "else" => Token::Else,
-                                "while" => Token::While,
-                                "for" => Token::For,
-                                "break" => Token::Break,
-                                "continue" => Token::Continue,
-                                "func" => Token::Function,
-                                "return" => Token::Return,
-                                "let" => Token::Let,
-                                _ => Token::Identifier(word),
-                            };
-                            return Ok(Some(token));
-                        }
-                        c if c.is_ascii_digit() => {
-                            let mut number = String::from(c);
-                            while let Some(&next) = cursor.peek() {
-                                if next.is_ascii_digit() || next == '.' {
-                                    number.push(next);
-                                    cursor.next();
-                                } else {
-                                    break;
-                                }
-                            }
-                            let token = if number.contains('.') {
-                                Token::Decimal(
-                                    number
-                                        .parse()
-                                        .map_err(|e| format!("Error parsing decimal: {}", e))?,
-                                )
-                            } else {
-                                Token::Integer(
-                                    number
-                                        .parse()
-                                        .map_err(|e| format!("Error parsing integer: {}", e))?,
-                                )
-                            };
-                            return Ok(Some(token));
-                        }
-                        '#' => {
-                            // Skip comments until the end of the line
-                            while let Some(&next) = cursor.peek() {
-                                if next == '\n' {
-                                    break;
-                                }
-                                cursor.next();
-                            }
-                            continue; // Skip to the next iteration to get the next token
-                        }
-                        _ => {
-                            return Err(format!("Unrecognized character: '{}'", c));
-                        }
-                    };
-                    return Ok(Some(token));
-                }
-                None => return Ok(None), // End of input
-            }
-        }
-    }
-
     pub fn is_literal(&self) -> bool {
         matches!(
             self,
@@ -198,5 +60,49 @@ impl Token {
                 | Token::True
                 | Token::False
         )
+    }
+}
+
+impl std::fmt::Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::Identifier(s) => write!(f, "identifier '{}'", s),
+            Token::Integer(i) => write!(f, "integer '{}'", i),
+            Token::Decimal(d) => write!(f, "decimal '{}'", d),
+            Token::StringLiteral(s) => write!(f, "string literal '{}'", s),
+            Token::True => write!(f, "'true'"),
+            Token::False => write!(f, "'false'"),
+            Token::LeftParen => write!(f, "(",),
+            Token::RightParen => write!(f, ")",),
+            Token::Colon => write!(f, ":",),
+            Token::Comma => write!(f, ",",),
+            Token::Equal => write!(f, "=",),
+            Token::Else => write!(f, "else",),
+            Token::NewLine => write!(f, "a newline"),
+            Token::Indent => write!(f, "an indented block"),
+            Token::Dedent => write!(f, "a dedent"),
+            Token::Eof => write!(f, "end of input"),
+            Token::Plus => write!(f, "+"),
+            Token::Minus => write!(f, "-"),
+            Token::Asterisk => write!(f, "*"),
+            Token::Slash => write!(f, "/"),
+            Token::And => write!(f, "and"),
+            Token::Or => write!(f, "or"),
+            Token::Bang => write!(f, "!"),
+            Token::BangEqual => write!(f, "!="),
+            Token::EqualEqual => write!(f, "=="),
+            Token::Less => write!(f, "<"),
+            Token::LessEqual => write!(f, "<="),
+            Token::Greater => write!(f, ">"),
+            Token::GreaterEqual => write!(f, ">="),
+            Token::If => write!(f, "if"),
+            Token::While => write!(f, "while"),
+            Token::For => write!(f, "for"),
+            Token::Break => write!(f, "break"),
+            Token::Continue => write!(f, "continue"),
+            Token::Function => write!(f, "function"),
+            Token::Return => write!(f, "return"),
+            Token::Let => write!(f, "let"),
+        }
     }
 }

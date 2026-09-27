@@ -49,7 +49,7 @@ fn inline_mode(mode: Mode) -> Result<(), i32> {
         else {
             break;
         };
-        let tokens = scanner::scan_line(line).map_err(|e| {
+        let tokens = scanner::scan(line.as_bytes()).map_err(|e| {
             eprintln!("Error scanning line: {}", e);
             2
         })?;
@@ -66,7 +66,7 @@ fn file_mode(filename: &str, mode: Mode) -> Result<(), i32> {
         eprintln!("Error opening file {}: {}", filename, e);
         1
     })?;
-    let tokens = scanner::scan_file(BufReader::new(file)).map_err(|e| {
+    let tokens = scanner::scan(BufReader::new(file)).map_err(|e| {
         eprintln!("Error scanning file {}: {}", filename, e);
         2
     })?;
