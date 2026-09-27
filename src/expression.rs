@@ -1,6 +1,6 @@
 use crate::token::Token;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     Literal {
         value: Token,

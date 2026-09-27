@@ -38,6 +38,11 @@ pub(super) fn statement(cursor: &mut Cursor) -> Result<Statement, String> {
             cursor.advance();
             Statement::ContinueStatement
         }
+        Some(Token::Identifier(s)) if s == "print" => {
+            cursor.advance();
+            let expr = expression(cursor)?;
+            Statement::PrintStatement(expr)
+        }
         Some(_) => Statement::ExpressionStatement(expression(cursor)?),
         None => return Err("Unexpected end of input while parsing statement".to_string()),
     };
