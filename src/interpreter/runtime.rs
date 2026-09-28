@@ -53,8 +53,20 @@ impl<W: Write> Runtime<W> {
     }
 
     fn run_block(&mut self, statements: Vec<Statement>) -> Result<ControlFlow, String> {
+        self.run_block_with(None, statements)
+    }
+
+    /// Runs `statements` in a fresh scope, which `binding` is defined in first.
+    fn run_block_with(
+        &mut self,
+        binding: Option<(String, Value)>,
+        statements: Vec<Statement>,
+    ) -> Result<ControlFlow, String> {
         let enclosing_scope = self.current_scope.clone();
         self.current_scope = Scope::new(Some(enclosing_scope.clone()));
+        if let Some((name, value)) = binding {
+            self.current_scope.define(name, value);
+        }
         let result = self.run_returning_flow(statements);
         self.current_scope = enclosing_scope;
         result
@@ -98,6 +110,13 @@ impl<W: Write> Runtime<W> {
             } => return self.execute_if_statement(condition, then_branch, else_branch),
             Statement::WhileStatement { condition, block } => {
                 return self.execute_while_statement(condition, block);
+            }
+            Statement::ForStatement {
+                variable,
+                iterable,
+                block,
+            } => {
+                return self.execute_for_statement(variable, iterable, block);
             }
             Statement::ReturnStatement { value } => {
                 let value = if let Some(expr) = value {
@@ -413,6 +432,40 @@ impl<W: Write> Runtime<W> {
             }
 
             match self.run_block(block.clone())? {
+                ControlFlow::Break => break,
+                ControlFlow::Continue => continue,
+                ControlFlow::Return(value) => return Ok(ControlFlow::Return(value)),
+                ControlFlow::None => {}
+            }
+        }
+        Ok(ControlFlow::None)
+    }
+
+    fn execute_for_statement(
+        &mut self,
+        variable: String,
+        iterable: Expression,
+        block: Vec<Statement>,
+    ) -> Result<ControlFlow, String> {
+        let iterable = self.evaluate_expression(iterable)?;
+        let Value::Array(elements) = &iterable else {
+            return Err(format!(
+                "Unsupported type for iteration: {}",
+                iterable.type_name()
+            ));
+        };
+
+        let mut position = 0;
+        loop {
+            // Read one element at a time, never holding the borrow across the
+            // block, so the block may mutate the array it is walking.
+            let element = elements.borrow().get(position).cloned();
+            let Some(element) = element else {
+                break;
+            };
+            position += 1;
+
+            match self.run_block_with(Some((variable.clone(), element)), block.clone())? {
                 ControlFlow::Break => break,
                 ControlFlow::Continue => continue,
                 ControlFlow::Return(value) => return Ok(ControlFlow::Return(value)),

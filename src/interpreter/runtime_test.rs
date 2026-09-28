@@ -244,6 +244,58 @@ fn break_only_leaves_the_innermost_loop() {
     assert_eq!(interpret(source).unwrap(), "11\n12\n21\n22\n");
 }
 
+#[test]
+fn a_for_loop_walks_the_elements_of_an_array() {
+    let source = concat!("for x in [1, 2, 3]:\n", "\tprint x\n",);
+    assert_eq!(interpret(source).unwrap(), "1\n2\n3\n");
+    assert_eq!(interpret("for x in []:\n\tprint x\n").unwrap(), "");
+    assert_eq!(
+        interpret("let a = [1] + [2]\nfor x in a:\n\tprint x\n").unwrap(),
+        "1\n2\n"
+    );
+}
+
+#[test]
+fn break_continue_and_return_work_inside_a_for_loop() {
+    let source = concat!(
+        "for x in [1, 2, 3, 4]:\n",
+        "\tif x == 2:\n",
+        "\t\tcontinue\n",
+        "\tif x == 4:\n",
+        "\t\tbreak\n",
+        "\tprint x\n",
+    );
+    assert_eq!(interpret(source).unwrap(), "1\n3\n");
+
+    let source = concat!(
+        "func first(arr):\n",
+        "\tfor n in arr:\n",
+        "\t\treturn n\n",
+        "\treturn null\n",
+        "print first([7, 8])\n",
+    );
+    assert_eq!(interpret(source).unwrap(), "7\n");
+}
+
+#[test]
+fn a_for_loop_block_may_write_to_the_array_it_walks() {
+    // The array is borrowed one element at a time, never across the block.
+    let source = concat!(
+        "let a = [1, 2, 3]\n",
+        "for x in a:\n",
+        "\ta[0] = x * 10\n",
+        "\tprint x\n",
+        "print a\n",
+    );
+    assert_eq!(interpret(source).unwrap(), "1\n2\n3\n[30, 2, 3]\n");
+}
+
+#[test]
+fn a_for_loop_rejects_values_that_are_not_arrays() {
+    let error = interpret("for x in 5:\n\tprint x\n").unwrap_err();
+    assert!(error.contains("Integer"), "{error}");
+}
+
 // ----------------------------------------------------------------- functions
 
 #[test]

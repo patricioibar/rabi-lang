@@ -23,8 +23,7 @@ pub(super) fn statement(cursor: &mut Cursor) -> Result<Statement, String> {
         }
         Some(Token::For) => {
             cursor.advance();
-            // todo!
-            return Err("for loops not yet supported".to_string());
+            return for_statement(cursor);
         }
         Some(Token::Return) => {
             cursor.advance();
@@ -107,6 +106,19 @@ fn while_statement(cursor: &mut Cursor) -> Result<Statement, String> {
     let block = block_body(cursor, "after while condition")?;
 
     Ok(Statement::WhileStatement { condition, block })
+}
+
+fn for_statement(cursor: &mut Cursor) -> Result<Statement, String> {
+    let variable = identifier(cursor, "for")?;
+    cursor.expect(&Token::In, "after the loop variable")?;
+    let iterable = expression(cursor)?;
+    let block = block_body(cursor, "after the iterated expression")?;
+
+    Ok(Statement::ForStatement {
+        variable,
+        iterable,
+        block,
+    })
 }
 
 fn return_statement(cursor: &mut Cursor) -> Result<Statement, String> {

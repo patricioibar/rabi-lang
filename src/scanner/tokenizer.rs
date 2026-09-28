@@ -94,6 +94,7 @@ pub(super) fn next_token(cursor: &mut Cursor) -> Result<Option<Token>, String> {
                             "else" => Token::Else,
                             "while" => Token::While,
                             "for" => Token::For,
+                            "in" => Token::In,
                             "break" => Token::Break,
                             "continue" => Token::Continue,
                             "func" => Token::Function,

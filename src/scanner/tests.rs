@@ -517,6 +517,7 @@ fn all_keywords() {
     assert_eq!(one("else"), Token::Else);
     assert_eq!(one("while"), Token::While);
     assert_eq!(one("for"), Token::For);
+    assert_eq!(one("in"), Token::In);
     assert_eq!(one("break"), Token::Break);
     assert_eq!(one("continue"), Token::Continue);
     assert_eq!(one("func"), Token::Function);

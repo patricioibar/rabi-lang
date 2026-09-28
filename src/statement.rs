@@ -25,6 +25,11 @@ pub enum Statement {
         condition: Expression,
         block: Vec<Statement>,
     },
+    ForStatement {
+        variable: String,
+        iterable: Expression,
+        block: Vec<Statement>,
+    },
     BreakStatement,
     ContinueStatement,
 }
