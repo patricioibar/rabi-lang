@@ -159,7 +159,11 @@ impl<W: Write> Runtime<W> {
                 return Ok(left_value);
             }
             let right_value = self.evaluate_expression(right)?;
-            return Ok(Value::Boolean(right_value.is_truthy()));
+            // `or` yields the operand that decided the result; `and` only its truthiness
+            return Ok(match operator {
+                Token::Or => right_value,
+                _ => Value::Boolean(right_value.is_truthy()),
+            });
         }
 
         let left_value = self.evaluate_expression(left)?;
