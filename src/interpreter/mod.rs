@@ -3,9 +3,6 @@ mod scope;
 mod value;
 
 #[cfg(test)]
-mod runtime_test;
-
-#[cfg(test)]
 mod value_test;
 
 use std::io::{Stdout, Write};

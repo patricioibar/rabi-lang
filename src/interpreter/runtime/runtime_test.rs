@@ -1,4 +1,4 @@
-use super::runtime::Runtime;
+use super::Runtime;
 use crate::{parser, scanner};
 
 fn interpret(source: &str) -> Result<String, String> {
