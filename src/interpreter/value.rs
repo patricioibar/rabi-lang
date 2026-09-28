@@ -9,12 +9,15 @@ pub(super) enum Value {
     String(String),
     Boolean(bool),
     Array(Rc<RefCell<Vec<Value>>>),
-    Function {
-        name: String,
-        parameters: Vec<String>,
-        body: Vec<Statement>,
-    },
+    Function(Rc<Function>),
     Null,
+}
+
+#[derive(Debug, PartialEq)]
+pub(super) struct Function {
+    pub name: String,
+    pub parameters: Vec<String>,
+    pub body: Vec<Statement>,
 }
 
 impl PartialEq for Value {
@@ -29,18 +32,7 @@ impl PartialEq for Value {
             (Value::Boolean(a), Value::Boolean(b)) => a == b,
             (Value::Array(a), Value::Array(b)) => a == b,
             (Value::Null, Value::Null) => true,
-            (
-                Value::Function {
-                    name: a_name,
-                    parameters: a_params,
-                    body: a_body,
-                },
-                Value::Function {
-                    name: b_name,
-                    parameters: b_params,
-                    body: b_body,
-                },
-            ) => a_name == b_name && a_params == b_params && a_body == b_body,
+            (Value::Function(a), Value::Function(b)) => a == b,
             _ => false,
         }
     }
@@ -57,6 +49,14 @@ impl Value {
         Value::Array(Rc::new(RefCell::new(elements)))
     }
 
+    pub fn function(name: String, parameters: Vec<String>, body: Vec<Statement>) -> Value {
+        Value::Function(Rc::new(Function {
+            name,
+            parameters,
+            body,
+        }))
+    }
+
     pub fn is_truthy(&self) -> bool {
         match self {
             Value::Boolean(b) => *b,
@@ -65,7 +65,7 @@ impl Value {
             Value::Decimal(d) => *d != 0.0,
             Value::String(s) => !s.is_empty(),
             Value::Array(elements) => !elements.borrow().is_empty(),
-            Value::Function { .. } => true,
+            Value::Function(_) => true,
         }
     }
 
@@ -76,7 +76,7 @@ impl Value {
             Value::String(_) => "String",
             Value::Boolean(_) => "Boolean",
             Value::Array(_) => "Array",
-            Value::Function { .. } => "Function",
+            Value::Function(_) => "Function",
             Value::Null => "Null",
         }
     }
@@ -318,7 +318,7 @@ impl std::fmt::Display for Value {
                     .collect::<Vec<_>>()
                     .join(", ")
             ),
-            Value::Function { name, .. } => write!(f, "<function {}>", name),
+            Value::Function(function) => write!(f, "<function {}>", function.name),
             Value::Null => write!(f, "null"),
         }
     }

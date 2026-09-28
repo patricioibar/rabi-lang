@@ -116,7 +116,7 @@ fn run_tokens(
         return Ok(());
     }
 
-    interpreter.run(statements)?;
+    interpreter.run(&statements)?;
 
     Ok(())
 }

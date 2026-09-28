@@ -13,30 +13,30 @@ use crate::token::Token;
 type SharedElements = Rc<RefCell<Vec<Value>>>;
 
 impl<W: Write> Runtime<W> {
-    pub(super) fn evaluate_expression(&mut self, expression: Expression) -> Result<Value, String> {
+    pub(super) fn evaluate_expression(&mut self, expression: &Expression) -> Result<Value, String> {
         match expression {
             Expression::Literal { value } => eval_literal(value),
-            Expression::Unary { operator, operand } => self.eval_unary(operator, *operand),
+            Expression::Unary { operator, operand } => self.eval_unary(operator, operand),
             Expression::Binary {
                 left,
                 operator,
                 right,
-            } => self.eval_binary(*left, operator, *right),
-            Expression::Grouping { expression } => self.evaluate_expression(*expression),
-            Expression::Variable { name } => self.get_variable(&name),
+            } => self.eval_binary(left, operator, right),
+            Expression::Grouping { expression } => self.evaluate_expression(expression),
+            Expression::Variable { name } => self.get_variable(name),
             Expression::ArrayLiteral { elements } => self.eval_array_literal(elements),
-            Expression::Index { collection, index } => self.eval_index(*collection, *index),
-            Expression::Len { operand } => self.eval_len(*operand),
-            Expression::Assignment { name, value } => self.assign_variable(name, *value),
+            Expression::Index { collection, index } => self.eval_index(collection, index),
+            Expression::Len { operand } => self.eval_len(operand),
+            Expression::Assignment { name, value } => self.assign_variable(name, value),
             Expression::IndexAssignment {
                 collection,
                 index,
                 value,
-            } => self.assign_index(*collection, *index, *value),
+            } => self.assign_index(collection, index, value),
             Expression::Call {
                 function,
                 arguments,
-            } => self.call_function(*function, arguments),
+            } => self.call_function(function, arguments),
         }
     }
 
@@ -48,14 +48,13 @@ impl<W: Write> Runtime<W> {
         }
     }
 
-    fn assign_variable(&mut self, name: String, value: Expression) -> Result<Value, String> {
+    fn assign_variable(&mut self, name: &str, value: &Expression) -> Result<Value, String> {
         let evaluated_value = self.evaluate_expression(value)?;
-        self.current_scope
-            .set(name.clone(), evaluated_value.clone())?;
+        self.current_scope.set(name, evaluated_value.clone())?;
         Ok(evaluated_value)
     }
 
-    fn eval_array_literal(&mut self, elements: Vec<Expression>) -> Result<Value, String> {
+    fn eval_array_literal(&mut self, elements: &[Expression]) -> Result<Value, String> {
         let mut values = Vec::with_capacity(elements.len());
         for element in elements {
             values.push(self.evaluate_expression(element)?);
@@ -63,23 +62,23 @@ impl<W: Write> Runtime<W> {
         Ok(Value::array(values))
     }
 
-    fn eval_len(&mut self, operand: Expression) -> Result<Value, String> {
+    fn eval_len(&mut self, operand: &Expression) -> Result<Value, String> {
         match self.evaluate_expression(operand)? {
             Value::Array(elements) => Ok(Value::Integer(elements.borrow().len() as i64)),
             other => Err(format!("Unsupported type for len: {}", other.type_name())),
         }
     }
 
-    fn eval_index(&mut self, collection: Expression, index: Expression) -> Result<Value, String> {
+    fn eval_index(&mut self, collection: &Expression, index: &Expression) -> Result<Value, String> {
         let (array, position) = self.eval_index_target(collection, index)?;
         Ok(array.borrow()[position].clone())
     }
 
     fn assign_index(
         &mut self,
-        collection: Expression,
-        index: Expression,
-        value: Expression,
+        collection: &Expression,
+        index: &Expression,
+        value: &Expression,
     ) -> Result<Value, String> {
         let (array, position) = self.eval_index_target(collection, index)?;
         let value = self.evaluate_expression(value)?;
@@ -90,8 +89,8 @@ impl<W: Write> Runtime<W> {
     /// resolve `collection[index]`
     fn eval_index_target(
         &mut self,
-        collection: Expression,
-        index: Expression,
+        collection: &Expression,
+        index: &Expression,
     ) -> Result<(SharedElements, usize), String> {
         let collection = self.evaluate_expression(collection)?;
         let Value::Array(array) = &collection else {
@@ -120,7 +119,7 @@ impl<W: Write> Runtime<W> {
         Ok((array.clone(), position as usize))
     }
 
-    fn eval_unary(&mut self, operator: Token, operand: Expression) -> Result<Value, String> {
+    fn eval_unary(&mut self, operator: &Token, operand: &Expression) -> Result<Value, String> {
         match operator {
             Token::Minus => {
                 let value = self.evaluate_expression(operand)?;
@@ -146,9 +145,9 @@ impl<W: Write> Runtime<W> {
 
     fn eval_binary(
         &mut self,
-        left: Expression,
-        operator: Token,
-        right: Expression,
+        left: &Expression,
+        operator: &Token,
+        right: &Expression,
     ) -> Result<Value, String> {
         if matches!(operator, Token::And | Token::Or) {
             let left_value = self.evaluate_expression(left)?;
@@ -204,35 +203,30 @@ impl<W: Write> Runtime<W> {
 
     fn call_function(
         &mut self,
-        function: Expression,
-        arguments: Vec<Expression>,
+        function: &Expression,
+        arguments: &[Expression],
     ) -> Result<Value, String> {
-        let Value::Function {
-            parameters,
-            body,
-            name: _,
-        } = self.evaluate_expression(function)?
-        else {
+        let Value::Function(function) = self.evaluate_expression(function)? else {
             return Err("Attempted to call a non-function value".to_string());
         };
 
-        if arguments.len() != parameters.len() {
+        if arguments.len() != function.parameters.len() {
             return Err(format!(
                 "Expected {} arguments but got {}",
-                parameters.len(),
+                function.parameters.len(),
                 arguments.len()
             ));
         }
 
         let new_scope = Scope::new(Some(self.global_scope.clone()));
-        for (param, arg_expr) in parameters.into_iter().zip(arguments) {
-            let arg_value = self.evaluate_expression(arg_expr)?;
-            new_scope.define(param, arg_value);
+        for (parameter, argument) in function.parameters.iter().zip(arguments) {
+            let argument_value = self.evaluate_expression(argument)?;
+            new_scope.define(parameter.clone(), argument_value);
         }
 
         let previous_scope = self.current_scope.clone();
         self.current_scope = new_scope;
-        let result = self.run_returning_flow(body);
+        let result = self.run_returning_flow(&function.body);
         self.current_scope = previous_scope;
 
         match result? {
@@ -244,11 +238,11 @@ impl<W: Write> Runtime<W> {
     }
 }
 
-fn eval_literal(value: Token) -> Result<Value, String> {
+fn eval_literal(value: &Token) -> Result<Value, String> {
     match value {
-        Token::Integer(i) => Ok(Value::Integer(i)),
-        Token::Decimal(d) => Ok(Value::Decimal(d)),
-        Token::StringLiteral(s) => Ok(Value::String(s)),
+        Token::Integer(i) => Ok(Value::Integer(*i)),
+        Token::Decimal(d) => Ok(Value::Decimal(*d)),
+        Token::StringLiteral(s) => Ok(Value::String(s.clone())),
         Token::True => Ok(Value::Boolean(true)),
         Token::False => Ok(Value::Boolean(false)),
         Token::Null => Ok(Value::Null),

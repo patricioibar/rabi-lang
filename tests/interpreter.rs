@@ -54,7 +54,7 @@ fn interpret_program(path: &Path) -> (String, Result<(), String>) {
         let source = std::fs::File::open(path).map_err(|e| format!("could not open: {}", e))?;
         let tokens = scanner::scan(std::io::BufReader::new(source))?;
         let statements = parser::parse(tokens)?;
-        Interpreter::with_output(&mut output).run(statements)
+        Interpreter::with_output(&mut output).run(&statements)
     })();
 
     let output = String::from_utf8(output).expect("output should be valid UTF-8");

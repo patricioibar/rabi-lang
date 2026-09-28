@@ -32,7 +32,7 @@ impl<W: Write> Interpreter<W> {
         }
     }
 
-    pub fn run(&mut self, statements: Vec<Statement>) -> Result<(), String> {
+    pub fn run(&mut self, statements: &[Statement]) -> Result<(), String> {
         self.runtime
             .run_plain(statements)
             .map_err(|e| format!("Error interpreting: {}", e))

@@ -168,12 +168,7 @@ fn reports_type_names() {
     assert_eq!(Value::Boolean(true).type_name(), "Boolean");
     assert_eq!(Value::Null.type_name(), "Null");
     assert_eq!(
-        Value::Function {
-            name: "f".to_string(),
-            parameters: vec![],
-            body: vec![],
-        }
-        .type_name(),
+        Value::function("f".to_string(), vec![], vec![]).type_name(),
         "Function"
     );
 }
@@ -186,12 +181,7 @@ fn displays_values() {
     assert_eq!(Value::Boolean(true).to_string(), "true");
     assert_eq!(Value::Null.to_string(), "null");
     assert_eq!(
-        Value::Function {
-            name: "f".to_string(),
-            parameters: vec!["a".to_string()],
-            body: vec![],
-        }
-        .to_string(),
+        Value::function("f".to_string(), vec!["a".to_string()], vec![]).to_string(),
         "<function f>"
     );
 }

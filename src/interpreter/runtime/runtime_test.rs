@@ -5,7 +5,7 @@ fn interpret(source: &str) -> Result<String, String> {
     let mut output = Vec::new();
     let tokens = scanner::scan(source.as_bytes())?;
     let statements = parser::parse(tokens)?;
-    Runtime::new(&mut output).run_plain(statements)?;
+    Runtime::new(&mut output).run_plain(&statements)?;
     String::from_utf8(output).map_err(|e| format!("output was not valid UTF-8: {e}"))
 }
 

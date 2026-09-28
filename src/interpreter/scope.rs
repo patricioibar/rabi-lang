@@ -30,7 +30,7 @@ impl Scope {
         self.inner.borrow().get(name)
     }
 
-    pub(super) fn set(&self, name: String, value: Value) -> Result<(), String> {
+    pub(super) fn set(&self, name: &str, value: Value) -> Result<(), String> {
         self.inner.borrow_mut().set(name, value)
     }
 }
@@ -49,8 +49,8 @@ impl InnerScope {
         }
     }
 
-    fn set(&mut self, name: String, value: Value) -> Result<(), String> {
-        if let Some(slot) = self.variables.get_mut(&name) {
+    fn set(&mut self, name: &str, value: Value) -> Result<(), String> {
+        if let Some(slot) = self.variables.get_mut(name) {
             *slot = value;
             Ok(())
         } else if let Some(parent_scope) = &self.parent {
