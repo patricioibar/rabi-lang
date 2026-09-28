@@ -11,7 +11,13 @@ Para instalar el proyecto se debe tener instalado [Rust y Cargo](https://www.rus
 Luego de clonar el repositorio, se puede instalar el proyecto ejecutando el siguiente comando en la raíz del proyecto:
 
 ```bash
-cargo install --path .
+make install
+```
+
+Todos los comandos del proyecto están en el `Makefile`. Para ver la lista completa:
+
+```bash
+make
 ```
 
 ## Uso
@@ -20,7 +26,13 @@ cargo install --path .
 rabi <archivo>  [ --scanning | --parsing ]
 ```
 
-Para ejecutar un compilador en modo interactivo, simplemente ejecutar el programa sin argumentos
+Para ejecutar un compilador en modo interactivo, simplemente ejecutar el programa sin argumentos.
+
+Sin instalar el binario, se puede correr un programa desde la raíz del proyecto con:
+
+```bash
+make run FILE=<archivo> [ ARGS="--scanning" ]
+```
 
 Si se provee un archivo, el programa lo ejecutará y mostrará el resultado en la salida estándar.
 
@@ -28,20 +40,22 @@ Los parámetros de `scanning` y `parsing` son mutuamente excluyentes. Si se prov
 
 ## Entrega parcial - Intérprete
 
+Leer [ENTREGA_PARCIAL.md](ENTREGA_PARCIAL.md) para más información sobre la entrega parcial del proyecto.
+
 ## Tests de integración
 Se encuentran tests de integración en el directorio `tests/`. Para ejecutarlos, se puede usar el siguiente comando:
 
 ```bash
-cargo test --test interpreter
+make test
 ```
 
-Los tests corren los programas encontrados en `tests/test-programs/`, los cuales son muy similares a los provistos por la cátedra, pero con algunas diferencias en la sintaxis y semántica.
+Los tests corren los programas encontrados en `tests/test-programs/`, los cuales son equivalentes a los provistos por la cátedra, adaptados para el lenguaje `rabi`.
 
 ## Benchmark
-Se encuentran adjuntos tests de benchmark. Se implementó un mismo programa en rabi, Python y Rust. Para correrlos y ver los tiempos de ejecución, se puede usar el siguiente comando:
+Se encuentra adjunto un benchmark. Se implementó un mismo programa en rabi, Python y Rust. Para correrlo y ver los tiempos de ejecución, se puede usar el siguiente comando:
 
 ```bash
-tests/run_benchmark.sh
+make bench
 ```
 
-Es requisito previo tener instalado Python 3 y Rust. El script compila el programa en Rust y luego ejecuta los tres programas, mostrando los tiempos de ejecución.
+Es requisito previo tener instalado Python 3 y Rust. El benchmark compila el programa en Rust y luego ejecuta los tres programas, mostrando los tiempos de ejecución. No verifica nada ni forma parte de la suite de tests: ni `make test` ni `cargo test` lo corren.

@@ -5,3 +5,18 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
+
+[lib]
+bench = false
+
+[[bin]]
+name = "rabi"
+bench = false
+
+# El benchmark no es un test: no verifica nada, solo imprime tiempos.
+# Declarado como bench para que `cargo test` no lo corra y `cargo bench` sí.
+[[bench]]
+name = "benchmark"
+path = "tests/benchmark/runner.rs"
+harness = false
+test = false
