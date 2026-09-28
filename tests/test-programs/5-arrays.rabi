@@ -1,0 +1,65 @@
+func assert(input, expected):
+    if (input != expected):
+        print "ERROR"
+    else:
+        print "OK"
+
+print "--- ARRAY LITERALS ---"
+assert(len [], 0)
+assert(len [1, 2, 3], 3)
+assert([1, 2], [1, 1 + 1])
+assert([1, 2] == [2, 1], false)
+assert([1, "dos", true, null, 5.5], [1, "dos", true, null, 5.5])
+
+print "--- INDEXING ---"
+let a = [10, 20, 30]
+assert(a[0], 10)
+assert(a[2], 30)
+assert(a[1 + 1], 30)
+
+print "--- INDEX ASSIGNMENT ---"
+let b = [1, 2, 3]
+b[0] = 99
+assert(b, [99, 2, 3])
+b[1] = b[1] * 10
+assert(b, [99, 20, 3])
+b[2] = [4, 5]
+assert(b[2][1], 5)
+let m = [[1, 2], [3, 4]]
+m[0][1] = "x"
+assert(m, [[1, "x"], [3, 4]])
+
+print "--- REFERENCE SEMANTICS ---"
+func mutate(arr):
+    arr[0] = "mutated"
+
+let shared = [1, 2]
+let alias = shared
+alias[1] = 99
+assert(shared, [1, 99])
+mutate(shared)
+assert(shared, ["mutated", 99])
+assert(alias, ["mutated", 99])
+
+print "--- LEN ---"
+let c = [1, 2, 3]
+assert(len c, 3)
+c[0] = [1, 2, 3, 4]
+assert(len c[0], 4)
+assert(len c, 3)
+
+print "--- CONCATENATION AND REPETITION ---"
+assert([1, 2] + [3], [1, 2, 3])
+assert([] + [], [])
+assert([1] + [], [1])
+assert(len ([1, 2] + [3, 4]), 4)
+assert([0, 1] * 2, [0, 1, 0, 1])
+assert(3 * [7], [7, 7, 7])
+assert([1] * 0, [])
+
+# concatenar copia: mutar un operando no toca el resultado
+let left = [1, 2]
+let joined = left + [3]
+left[0] = 99
+assert(joined, [1, 2, 3])
+assert(left, [99, 2])

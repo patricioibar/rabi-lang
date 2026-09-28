@@ -31,6 +31,8 @@ pub enum Token {
     // Punctuation
     LeftParen,
     RightParen,
+    LeftBracket,
+    RightBracket,
     Colon,
     Comma,
 
@@ -77,6 +79,8 @@ impl std::fmt::Display for Token {
             Token::False => write!(f, "'false'"),
             Token::LeftParen => write!(f, "(",),
             Token::RightParen => write!(f, ")",),
+            Token::LeftBracket => write!(f, "[",),
+            Token::RightBracket => write!(f, "]",),
             Token::Colon => write!(f, ":",),
             Token::Comma => write!(f, ",",),
             Token::Equal => write!(f, "=",),

@@ -586,3 +586,38 @@ fn logical_or_yield_the_deciding_operand() {
 fn logical_and_dont_yield_the_deciding_operand() {
     assert_eq!(interpret("print 0 and \"fallback\"\n").unwrap(), "false\n");
 }
+
+// --------------------------------------------------------------------- arrays
+
+#[test]
+fn len_counts_the_elements_of_an_array() {
+    assert_eq!(interpret("print len []\n").unwrap(), "0\n");
+    assert_eq!(interpret("print len [1, 2, 3]\n").unwrap(), "3\n");
+    assert_eq!(interpret("print len [[1, 2], [3]][0]\n").unwrap(), "2\n");
+}
+
+#[test]
+fn len_rejects_values_that_are_not_arrays() {
+    let error = interpret("print len 1\n").unwrap_err();
+    assert!(error.contains("Integer"), "{error}");
+}
+
+#[test]
+fn arrays_are_concatenated_and_repeated() {
+    assert_eq!(interpret("print [1, 2] + [3]\n").unwrap(), "[1, 2, 3]\n");
+    assert_eq!(interpret("print [0, 1] * 2\n").unwrap(), "[0, 1, 0, 1]\n");
+    assert_eq!(interpret("print 2 * [0]\n").unwrap(), "[0, 0]\n");
+}
+
+#[test]
+fn a_loop_can_walk_an_array_with_len_and_assign_through_an_index() {
+    let source = concat!(
+        "let a = [1, 2, 3]\n",
+        "let i = 0\n",
+        "while i < len a:\n",
+        "\ta[i] = a[i] * 10\n",
+        "\ti = i + 1\n",
+        "print a\n",
+    );
+    assert_eq!(interpret(source).unwrap(), "[10, 20, 30]\n");
+}

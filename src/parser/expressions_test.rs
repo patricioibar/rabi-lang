@@ -91,6 +91,13 @@ fn call(function: Expression, arguments: Vec<Expression>) -> Expression {
     }
 }
 
+fn index(collection: Expression, index: Expression) -> Expression {
+    Expression::Index {
+        collection: Box::new(collection),
+        index: Box::new(index),
+    }
+}
+
 fn assign(name: &str, value: Expression) -> Expression {
     Expression::Assignment {
         name: name.to_string(),
@@ -488,6 +495,61 @@ fn a_trailing_comma_in_a_call_is_allowed() {
 #[test]
 fn a_leading_comma_in_a_call_is_an_error() {
     assert_eq!(error("f(,1)"), "Expected expression");
+}
+
+// --- Arrays ---
+
+#[test]
+fn an_array_literal_holds_its_elements() {
+    assert_eq!(parse("[]"), Expression::ArrayLiteral { elements: vec![] });
+    assert_eq!(
+        parse("[1, 2 + 3,]"),
+        Expression::ArrayLiteral {
+            elements: vec![int(1), binary(int(2), Token::Plus, int(3))]
+        }
+    );
+}
+
+#[test]
+fn indexing_chains_and_binds_tighter_than_unary() {
+    assert_eq!(
+        parse("-a[0][1]"),
+        unary(Token::Minus, index(index(var("a"), int(0)), int(1)))
+    );
+    assert_eq!(error("a[0"), "Expected ']' after index expression");
+}
+
+#[test]
+fn an_index_is_a_valid_assignment_target() {
+    assert_eq!(
+        parse("a[0] = 1"),
+        Expression::IndexAssignment {
+            collection: Box::new(var("a")),
+            index: Box::new(int(0)),
+            value: Box::new(int(1)),
+        }
+    );
+}
+
+#[test]
+fn len_takes_only_a_unary_operand() {
+    // `len a + 1` is `(len a) + 1`, and the postfix `[0]` is part of the operand.
+    assert_eq!(
+        parse("len a + 1"),
+        binary(
+            Expression::Len {
+                operand: Box::new(var("a"))
+            },
+            Token::Plus,
+            int(1)
+        )
+    );
+    assert_eq!(
+        parse("len a[0]"),
+        Expression::Len {
+            operand: Box::new(index(var("a"), int(0)))
+        }
+    );
 }
 
 // --- Empty and malformed input ---

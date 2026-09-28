@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::io::Write;
+use std::rc::Rc;
 
 use super::value::{Value, overflow};
 use crate::expression::Expression;
@@ -6,6 +8,10 @@ use crate::statement::Statement;
 use crate::token::Token;
 
 use super::scope::Scope;
+
+/// The elements an [`Expression::Index`] resolves to, aliased with every other
+/// binding holding the same array.
+type SharedElements = Rc<RefCell<Vec<Value>>>;
 
 pub struct Runtime<W: Write> {
     global_scope: Scope,
@@ -118,7 +124,15 @@ impl<W: Write> Runtime<W> {
             } => self.eval_binary(*left, operator, *right),
             Expression::Grouping { expression } => self.evaluate_expression(*expression),
             Expression::Variable { name } => self.get_variable(&name),
+            Expression::ArrayLiteral { elements } => self.eval_array_literal(elements),
+            Expression::Index { collection, index } => self.eval_index(*collection, *index),
+            Expression::Len { operand } => self.eval_len(*operand),
             Expression::Assignment { name, value } => self.assign_variable(name, *value),
+            Expression::IndexAssignment {
+                collection,
+                index,
+                value,
+            } => self.assign_index(*collection, *index, *value),
             Expression::Call {
                 function,
                 arguments,
@@ -153,6 +167,71 @@ impl<W: Write> Runtime<W> {
         self.current_scope
             .set(name.clone(), evaluated_value.clone())?;
         Ok(evaluated_value)
+    }
+
+    fn eval_array_literal(&mut self, elements: Vec<Expression>) -> Result<Value, String> {
+        let mut values = Vec::with_capacity(elements.len());
+        for element in elements {
+            values.push(self.evaluate_expression(element)?);
+        }
+        Ok(Value::array(values))
+    }
+
+    fn eval_len(&mut self, operand: Expression) -> Result<Value, String> {
+        match self.evaluate_expression(operand)? {
+            Value::Array(elements) => Ok(Value::Integer(elements.borrow().len() as i64)),
+            other => Err(format!("Unsupported type for len: {}", other.type_name())),
+        }
+    }
+
+    fn eval_index(&mut self, collection: Expression, index: Expression) -> Result<Value, String> {
+        let (array, position) = self.eval_index_target(collection, index)?;
+        Ok(array.borrow()[position].clone())
+    }
+
+    fn assign_index(
+        &mut self,
+        collection: Expression,
+        index: Expression,
+        value: Expression,
+    ) -> Result<Value, String> {
+        let (array, position) = self.eval_index_target(collection, index)?;
+        let value = self.evaluate_expression(value)?;
+        array.borrow_mut()[position] = value.clone();
+        Ok(value)
+    }
+
+    /// resolve `collection[index]`
+    fn eval_index_target(
+        &mut self,
+        collection: Expression,
+        index: Expression,
+    ) -> Result<(SharedElements, usize), String> {
+        let collection = self.evaluate_expression(collection)?;
+        let Value::Array(array) = &collection else {
+            return Err(format!(
+                "Unsupported type for indexing: {}",
+                collection.type_name()
+            ));
+        };
+
+        let index = self.evaluate_expression(index)?;
+        let Value::Integer(position) = index else {
+            return Err(format!(
+                "Array index must be an Integer, found {}",
+                index.type_name()
+            ));
+        };
+
+        let length = array.borrow().len();
+        if position < 0 || position as usize >= length {
+            return Err(format!(
+                "Array index out of bounds: {} (length {})",
+                position, length
+            ));
+        }
+
+        Ok((array.clone(), position as usize))
     }
 
     fn eval_unary(&mut self, operator: Token, operand: Expression) -> Result<Value, String> {

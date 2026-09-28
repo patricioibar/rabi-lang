@@ -65,6 +65,8 @@ fn single_character_operators() {
 fn punctuation() {
     assert_eq!(one("("), Token::LeftParen);
     assert_eq!(one(")"), Token::RightParen);
+    assert_eq!(one("["), Token::LeftBracket);
+    assert_eq!(one("]"), Token::RightBracket);
     assert_eq!(one(":"), Token::Colon);
     assert_eq!(one(","), Token::Comma);
 }
@@ -72,10 +74,12 @@ fn punctuation() {
 #[test]
 fn all_punctuation_in_sequence() {
     assert_eq!(
-        tokenize("(),:").unwrap(),
+        tokenize("()[],:").unwrap(),
         vec![
             Token::LeftParen,
             Token::RightParen,
+            Token::LeftBracket,
+            Token::RightBracket,
             Token::Comma,
             Token::Colon
         ]
@@ -591,7 +595,7 @@ fn an_unrecognized_character_is_an_error() {
 #[test]
 fn various_unrecognized_characters() {
     for source in [
-        "@", "$", "&", "|", "^", "~", ";", "[", "]", "{", "}", "?", ".", "'", "\\",
+        "@", "$", "&", "|", "^", "~", ";", "{", "}", "?", ".", "'", "\\",
     ] {
         let mut cursor = source.chars().peekable();
         assert_eq!(

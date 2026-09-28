@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::statement::Statement;
 
 #[derive(Debug, Clone)]
@@ -6,6 +8,7 @@ pub(super) enum Value {
     Decimal(f64),
     String(String),
     Boolean(bool),
+    Array(Rc<RefCell<Vec<Value>>>),
     Function {
         name: String,
         parameters: Vec<String>,
@@ -24,6 +27,7 @@ impl PartialEq for Value {
             }
             (Value::String(a), Value::String(b)) => a == b,
             (Value::Boolean(a), Value::Boolean(b)) => a == b,
+            (Value::Array(a), Value::Array(b)) => a == b,
             (Value::Null, Value::Null) => true,
             (
                 Value::Function {
@@ -49,6 +53,10 @@ pub(super) fn overflow(operation: &str) -> String {
 }
 
 impl Value {
+    pub fn array(elements: Vec<Value>) -> Value {
+        Value::Array(Rc::new(RefCell::new(elements)))
+    }
+
     pub fn is_truthy(&self) -> bool {
         match self {
             Value::Boolean(b) => *b,
@@ -56,6 +64,7 @@ impl Value {
             Value::Integer(i) => *i != 0,
             Value::Decimal(d) => *d != 0.0,
             Value::String(s) => !s.is_empty(),
+            Value::Array(elements) => !elements.borrow().is_empty(),
             Value::Function { .. } => true,
         }
     }
@@ -66,6 +75,7 @@ impl Value {
             Value::Decimal(_) => "Decimal",
             Value::String(_) => "String",
             Value::Boolean(_) => "Boolean",
+            Value::Array(_) => "Array",
             Value::Function { .. } => "Function",
             Value::Null => "Null",
         }
@@ -179,6 +189,11 @@ impl std::ops::Add for Value {
             (Value::Integer(a), Value::Decimal(b)) => Ok(Value::Decimal(a as f64 + b)),
             (Value::Decimal(a), Value::Integer(b)) => Ok(Value::Decimal(a + b as f64)),
             (Value::String(a), Value::String(b)) => Ok(Value::String(format!("{}{}", a, b))),
+            (Value::Array(a), Value::Array(b)) => {
+                let mut elements = a.borrow().clone();
+                elements.extend(b.borrow().iter().cloned());
+                Ok(Value::array(elements))
+            }
             (a, b) => Err(format!(
                 "Unsupported operand types for addition: {} and {}",
                 a.type_name(),
@@ -226,6 +241,16 @@ impl std::ops::Mul for Value {
                     return Err("Cannot multiply string by negative integer".to_string());
                 }
                 Ok(Value::String(s.repeat(n as usize)))
+            }
+            (Value::Array(a), Value::Integer(n)) | (Value::Integer(n), Value::Array(a)) => {
+                if n < 0 {
+                    return Err("Cannot multiply array by negative integer".to_string());
+                }
+                let mut elements = Vec::with_capacity(a.borrow().len() * n as usize);
+                for _ in 0..n {
+                    elements.extend(a.borrow().iter().cloned());
+                }
+                Ok(Value::array(elements))
             }
             (a, b) => Err(format!(
                 "Unsupported operand types for multiplication: {} and {}",
@@ -283,6 +308,16 @@ impl std::fmt::Display for Value {
             Value::Decimal(d) => write!(f, "{}", d),
             Value::String(s) => write!(f, "{}", s),
             Value::Boolean(b) => write!(f, "{}", b),
+            Value::Array(elements) => write!(
+                f,
+                "[{}]",
+                elements
+                    .borrow()
+                    .iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
             Value::Function { name, .. } => write!(f, "<function {}>", name),
             Value::Null => write!(f, "null"),
         }

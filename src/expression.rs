@@ -20,8 +20,23 @@ pub enum Expression {
     Variable {
         name: String,
     },
+    ArrayLiteral {
+        elements: Vec<Expression>,
+    },
+    Index {
+        collection: Box<Expression>,
+        index: Box<Expression>,
+    },
+    Len {
+        operand: Box<Expression>,
+    },
     Assignment {
         name: String,
+        value: Box<Expression>,
+    },
+    IndexAssignment {
+        collection: Box<Expression>,
+        index: Box<Expression>,
         value: Box<Expression>,
     },
     Call {

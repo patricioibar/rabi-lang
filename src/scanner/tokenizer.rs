@@ -25,6 +25,8 @@ pub(super) fn next_token(cursor: &mut Cursor) -> Result<Option<Token>, String> {
                     '%' => Token::Percent,
                     '(' => Token::LeftParen,
                     ')' => Token::RightParen,
+                    '[' => Token::LeftBracket,
+                    ']' => Token::RightBracket,
                     ':' => Token::Colon,
                     '=' => match cursor.peek() {
                         Some('=') => {

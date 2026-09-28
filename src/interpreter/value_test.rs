@@ -12,6 +12,10 @@ fn string(s: &str) -> Value {
     Value::String(s.to_string())
 }
 
+fn array(elements: Vec<Value>) -> Value {
+    Value::array(elements)
+}
+
 // ---------------------------------------------------------------- arithmetic
 
 #[test]
@@ -253,4 +257,50 @@ fn overflow_is_reported_per_operation() {
 #[test]
 fn division_by_zero_still_reports_zero_not_overflow() {
     assert_eq!((int(i64::MIN) / int(0)).unwrap_err(), "Division by zero");
+}
+
+// -------------------------------------------------------------------- arrays
+
+#[test]
+fn adds_arrays_by_concatenating() {
+    assert_eq!(
+        (array(vec![int(1)]) + array(vec![int(2), string("a")])).unwrap(),
+        array(vec![int(1), int(2), string("a")])
+    );
+    assert_eq!(
+        (array(vec![]) + array(vec![int(1)])).unwrap(),
+        array(vec![int(1)])
+    );
+}
+
+#[test]
+fn concatenation_does_not_alias_its_operands() {
+    let left = array(vec![int(1)]);
+    let joined = (left.clone() + array(vec![int(2)])).unwrap();
+
+    let Value::Array(elements) = &left else {
+        panic!("left should be an array");
+    };
+    elements.borrow_mut()[0] = int(99);
+
+    assert_eq!(joined, array(vec![int(1), int(2)]));
+}
+
+#[test]
+fn multiplying_an_array_by_an_integer_repeats_it() {
+    assert_eq!(
+        (array(vec![int(1), int(2)]) * int(2)).unwrap(),
+        array(vec![int(1), int(2), int(1), int(2)])
+    );
+    assert_eq!(
+        (int(2) * array(vec![int(1)])).unwrap(),
+        array(vec![int(1), int(1)])
+    );
+    assert_eq!((array(vec![int(1)]) * int(0)).unwrap(), array(vec![]));
+}
+
+#[test]
+fn multiplying_an_array_by_a_negative_integer_is_an_error() {
+    let error = (array(vec![int(1)]) * int(-1)).unwrap_err();
+    assert!(error.contains("negative"), "{error}");
 }
