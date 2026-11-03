@@ -7,6 +7,9 @@ use crate::{
 
 mod chunk;
 
+#[cfg(test)]
+mod compiler_test;
+
 pub use chunk::Chunk;
 
 /// Compila el programa entero como una función "script" de nivel superior.
