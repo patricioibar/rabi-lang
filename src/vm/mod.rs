@@ -6,6 +6,9 @@ use std::{
 
 use crate::bytecode::{Function, Operation, Value};
 
+#[cfg(test)]
+mod vm_test;
+
 const MAX_FRAMES: usize = 1024;
 
 struct CallFrame {
@@ -17,8 +20,6 @@ struct CallFrame {
 pub struct Vm<W: Write = Stdout> {
     stack: Vec<Value>,
     frames: Vec<CallFrame>,
-    /// Las globales viven acá, indexadas por nombre.
-    /// DefineGlobal(i) / GetGlobal(i) buscan el nombre en chunk.constants[i].
     globals: HashMap<String, Value>,
     output: W,
 }
@@ -56,7 +57,8 @@ impl<W: Write> Vm<W> {
             stack_slot: 0,
         });
 
-        self.execute().map_err(|e| format!("Error executing: {}", e))
+        self.execute()
+            .map_err(|e| format!("Error executing: {}", e))
     }
 
     #[rustfmt::skip]
@@ -130,39 +132,34 @@ impl<W: Write> Vm<W> {
 
                 Operation::GetLocal(slot) => {
                     let index = self.frame()?.stack_slot + slot as usize;
-                    let value = self.stack[index].clone();
+                    let value = self.stack.get(index).cloned().ok_or("Local slot out of bounds")?;
                     self.push(value);
                 }
 
-                // stack[frame.slots + slot] = peek  (NO hace pop)
                 Operation::SetLocal(slot) => {
                     let index = self.frame()?.stack_slot + slot as usize;
-                    self.stack[index] = self.peek(0)?.clone();
+                    let value = self.peek(0)?.clone();
+                    *self.stack.get_mut(index).ok_or("Local slot out of bounds")? = value;
                 }
 
-                // ip += offset
                 Operation::Jump(offset) => {
                     self.frame_mut()?.ip += offset as usize;
                 }
 
-                // si peek es falsy: ip += offset  (NO hace pop, el compilador emite el Pop)
                 Operation::JumpIfFalse(offset) => {
                     if !self.peek(0)?.is_truthy() {
                         self.frame_mut()?.ip += offset as usize;
                     }
                 }
 
-                // ip -= offset
                 Operation::Loop(offset) => {
                     self.frame_mut()?.ip -= offset as usize;
                 }
 
-                // stack: [.., función, arg1, .., argN] → abre un frame nuevo
                 Operation::Call(arg_count) => {
                     self.call(arg_count as usize)?;
                 }
 
-                // pop resultado, descartar los slots del frame, push resultado
                 Operation::Return => {
                     let result = self.pop()?;
                     let frame = self.frames.pop().ok_or("Return outside of a frame")?;
@@ -248,11 +245,15 @@ impl<W: Write> Vm<W> {
     }
 
     fn frame(&self) -> Result<&CallFrame, String> {
-        self.frames.last().ok_or_else(|| "No active frame".to_string())
+        self.frames
+            .last()
+            .ok_or_else(|| "No active frame".to_string())
     }
 
     fn frame_mut(&mut self) -> Result<&mut CallFrame, String> {
-        self.frames.last_mut().ok_or_else(|| "No active frame".to_string())
+        self.frames
+            .last_mut()
+            .ok_or_else(|| "No active frame".to_string())
     }
 
     fn push(&mut self, value: Value) {
@@ -260,7 +261,9 @@ impl<W: Write> Vm<W> {
     }
 
     fn pop(&mut self) -> Result<Value, String> {
-        self.stack.pop().ok_or_else(|| "Stack underflow".to_string())
+        self.stack
+            .pop()
+            .ok_or_else(|| "Stack underflow".to_string())
     }
 
     fn peek(&self, distance: usize) -> Result<&Value, String> {

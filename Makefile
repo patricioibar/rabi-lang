@@ -21,7 +21,7 @@ run: ## Ejecuta un programa sin instalar: make run FILE=programa.rabi [ARGS=--sc
 	$(CARGO) run --release --quiet -- $(FILE) $(ARGS)
 
 test: ## Corre los tests de integración sobre tests/test-programs/
-	$(CARGO) test --test interpreter
+	$(CARGO) test --test interpreter --test vm
 
 bench: ## Corre el benchmark (rabi vs Python vs Rust) e imprime los tiempos
 	$(CARGO) bench
