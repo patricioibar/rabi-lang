@@ -1,5 +1,8 @@
 use crate::{
-    bytecode::{Function, Operation, Value}, expression::Expression, statement::Statement, token::Token,
+    bytecode::{Function, Operation, Value},
+    expression::Expression,
+    statement::Statement,
+    token::Token,
 };
 
 mod chunk;
@@ -20,10 +23,17 @@ struct Local {
     depth: usize,
 }
 
+struct Loop {
+    start: usize,
+    depth: usize,
+    break_jumps: Vec<usize>,
+}
+
 struct Compiler {
     function: Function,
     locals: Vec<Local>,
     scope_depth: usize,
+    loops: Vec<Loop>,
 }
 
 impl Compiler {
@@ -39,6 +49,7 @@ impl Compiler {
                 depth: scope_depth,
             }],
             scope_depth,
+            loops: Vec::new(),
         }
     }
 
@@ -112,9 +123,9 @@ impl Compiler {
     }
 
     fn identifier_constant(&mut self, name: String) -> Result<u16, String> {
-        let existing = self.chunk().constants.iter().position(|constant| {
-            matches!(constant, Value::String(constant_name) if **constant_name == name)
-        });
+        let existing = self.chunk().constants.iter().position(
+            |constant| matches!(constant, Value::String(constant_name) if **constant_name == name),
+        );
         match existing {
             Some(index) => Ok(index as u16),
             None => self.chunk().add_constant(Value::String(name.into())),
@@ -204,7 +215,9 @@ impl Compiler {
     }
 
     fn print_statement(&mut self, expression: Expression) -> Result<(), String> {
-        todo!()
+        self.expression(expression)?;
+        self.emit(Operation::Print);
+        Ok(())
     }
 
     fn if_statement(
@@ -213,20 +226,55 @@ impl Compiler {
         then_branch: Vec<Statement>,
         else_branch: Option<Vec<Statement>>,
     ) -> Result<(), String> {
-        todo!()
+        self.expression(condition)?;
+        let else_jump = self.emit_jump(Operation::JumpIfFalse);
+        self.emit(Operation::Pop);
+        self.begin_scope();
+        for stmt in then_branch {
+            self.statement(stmt)?;
+        }
+        self.end_scope();
+        let end_jump = self.emit_jump(Operation::Jump);
+        self.patch_jump(else_jump)?;
+        self.emit(Operation::Pop);
+        if let Some(else_branch) = else_branch {
+            self.begin_scope();
+            for stmt in else_branch {
+                self.statement(stmt)?;
+            }
+            self.end_scope();
+        }
+        self.patch_jump(end_jump)?;
+        Ok(())
     }
 
-    fn while_statement(&mut self, condition: Expression, block: Vec<Statement>) -> Result<(), String> {
-        todo!()
-    }
-
-    fn for_statement(
+    fn while_statement(
         &mut self,
-        variable: String,
-        iterable: Expression,
+        condition: Expression,
         block: Vec<Statement>,
     ) -> Result<(), String> {
-        todo!()
+        let loop_start = self.chunk().code.len();
+        self.expression(condition)?;
+        let exit_jump = self.emit_jump(Operation::JumpIfFalse);
+        self.emit(Operation::Pop);
+        self.loops.push(Loop {
+            start: loop_start,
+            depth: self.scope_depth,
+            break_jumps: Vec::new(),
+        });
+        self.begin_scope();
+        for stmt in block {
+            self.statement(stmt)?;
+        }
+        self.end_scope();
+        self.emit_loop(loop_start)?;
+        self.patch_jump(exit_jump)?;
+        self.emit(Operation::Pop);
+        let finished_loop = self.loops.pop().ok_or("Loop stack underflow")?;
+        for jump in finished_loop.break_jumps {
+            self.patch_jump(jump)?;
+        }
+        Ok(())
     }
 
     fn expression_statement(&mut self, expression: Expression) -> Result<(), String> {
@@ -236,14 +284,58 @@ impl Compiler {
     }
 
     fn return_statement(&mut self, value: Option<Expression>) -> Result<(), String> {
-        todo!()
+        if self.locals[0].depth == 0 {
+            return Err("Return statement not allowed outside of a function".to_string());
+        }
+        if let Some(expression) = value {
+            self.expression(expression)?;
+        } else {
+            self.emit(Operation::Null);
+        }
+        self.emit(Operation::Return);
+        Ok(())
     }
 
     fn break_statement(&mut self) -> Result<(), String> {
-        todo!()
+        let depth = match self.loops.last() {
+            Some(innermost) => innermost.depth,
+            None => return Err("Break statement not allowed outside of a loop".to_string()),
+        };
+        self.discard_locals_above(depth);
+        let jump = self.emit_jump(Operation::Jump);
+        if let Some(innermost) = self.loops.last_mut() {
+            innermost.break_jumps.push(jump);
+        }
+        Ok(())
     }
 
     fn continue_statement(&mut self) -> Result<(), String> {
+        let (start, depth) = match self.loops.last() {
+            Some(innermost) => (innermost.start, innermost.depth),
+            None => return Err("Continue statement not allowed outside of a loop".to_string()),
+        };
+        self.discard_locals_above(depth);
+        self.emit_loop(start)
+    }
+
+    fn discard_locals_above(&mut self, depth: usize) {
+        let count = self
+            .locals
+            .iter()
+            .rev()
+            .take_while(|local| local.depth > depth)
+            .count();
+        for _ in 0..count {
+            self.emit(Operation::Pop);
+        }
+    }
+
+    fn for_statement(
+        &mut self,
+        variable: String,
+        iterable: Expression,
+        block: Vec<Statement>,
+    ) -> Result<(), String> {
         todo!()
     }
 
