@@ -26,7 +26,7 @@ impl Chunk {
             return Err("Exceded constants limit in chunk.".to_string());
         }
         self.constants.push(value);
-        Ok((self.constants.len() - 1) as u16)  
+        Ok((self.constants.len() - 1) as u16)
     }
 
     pub fn disassemble(&self, name: &str) {
