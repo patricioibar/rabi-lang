@@ -1,7 +1,7 @@
 use crate::bytecode::{Operation, Value};
 
 /// Datos puros: lo que produce el compilador y consume la VM.
-#[derive(Default)]
+#[derive(Default, PartialEq)]
 pub struct Chunk {
     pub code: Vec<Operation>,
     pub constants: Vec<Value>,

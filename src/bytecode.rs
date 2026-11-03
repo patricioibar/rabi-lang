@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Operation {
     Null,
     True,
@@ -15,7 +15,9 @@ pub enum Operation {
     Not,
     Equal,
     Greater,
+    GreaterEqual,
     Less,
+    LessEqual,
 
     Call(u16),
 
@@ -47,6 +49,7 @@ pub enum Value {
     Null,
 }
 
+#[derive(PartialEq)]
 pub struct Function {
     pub name: String,
     pub arity: usize,
@@ -65,7 +68,7 @@ impl PartialEq for Value {
             (Value::Boolean(a), Value::Boolean(b)) => a == b,
             (Value::Array(a), Value::Array(b)) => a == b,
             (Value::Null, Value::Null) => true,
-            (Value::Function(a), Value::Function(b)) => Rc::ptr_eq(a, b),
+            (Value::Function(a), Value::Function(b)) => a == b,
             _ => false,
         }
     }
@@ -138,6 +141,36 @@ impl Value {
             (Value::Integer(a), Value::Decimal(b)) => Ok((*a as f64) < *b),
             (Value::Decimal(a), Value::Integer(b)) => Ok(*a < (*b as f64)),
             (Value::String(a), Value::String(b)) => Ok(a < b),
+            _ => Err(format!(
+                "Unsupported operand types for comparison: {} and {}",
+                self.type_name(),
+                other.type_name()
+            )),
+        }
+    }
+
+    pub fn greater_equal_than(&self, other: &Value) -> Result<bool, String> {
+        match (self, other) {
+            (Value::Integer(a), Value::Integer(b)) => Ok(a >= b),
+            (Value::Decimal(a), Value::Decimal(b)) => Ok(a >= b),
+            (Value::Integer(a), Value::Decimal(b)) => Ok((*a as f64) >= *b),
+            (Value::Decimal(a), Value::Integer(b)) => Ok(*a >= (*b as f64)),
+            (Value::String(a), Value::String(b)) => Ok(a >= b),
+            _ => Err(format!(
+                "Unsupported operand types for comparison: {} and {}",
+                self.type_name(),
+                other.type_name()
+            )),
+        }
+    }
+
+    pub fn less_equal_than(&self, other: &Value) -> Result<bool, String> {
+        match (self, other) {
+            (Value::Integer(a), Value::Integer(b)) => Ok(a <= b),
+            (Value::Decimal(a), Value::Decimal(b)) => Ok(a <= b),
+            (Value::Integer(a), Value::Decimal(b)) => Ok((*a as f64) <= *b),
+            (Value::Decimal(a), Value::Integer(b)) => Ok(*a <= (*b as f64)),
+            (Value::String(a), Value::String(b)) => Ok(a <= b),
             _ => Err(format!(
                 "Unsupported operand types for comparison: {} and {}",
                 self.type_name(),

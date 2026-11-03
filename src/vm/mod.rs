@@ -99,7 +99,9 @@ impl<W: Write> Vm<W> {
                 Operation::Modulo => self.binary(|a, b| a.modulo(b))?,
                 Operation::Equal => self.binary(|a, b| Ok(Value::Boolean(a == b)))?,
                 Operation::Greater => self.binary(|a, b| a.greater_than(&b).map(Value::Boolean))?,
+                Operation::GreaterEqual => self.binary(|a, b| a.greater_equal_than(&b).map(Value::Boolean))?,
                 Operation::Less => self.binary(|a, b| a.less_than(&b).map(Value::Boolean))?,
+                Operation::LessEqual => self.binary(|a, b| a.less_equal_than(&b).map(Value::Boolean))?,
 
                 Operation::DefineGlobal(i) => {
                     let name = self.constant_name(i)?;

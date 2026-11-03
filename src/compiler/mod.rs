@@ -36,16 +36,17 @@ impl Compiler {
             },
             locals: vec![Local {
                 name: String::new(),
-                depth: 0,
+                depth: scope_depth,
             }],
             scope_depth,
         }
     }
 
-    fn finish(self) -> Result<Function, String> {
-        if self.scope_depth != 0 {
+    fn finish(mut self) -> Result<Function, String> {
+        if self.scope_depth != self.locals[0].depth {
             return Err("Unclosed scope at end of function.".to_string());
         }
+        self.emit(Operation::Null);
         self.emit(Operation::Return);
         Ok(self.function)
     }
@@ -111,7 +112,24 @@ impl Compiler {
     }
 
     fn identifier_constant(&mut self, name: String) -> Result<u16, String> {
-        self.chunk().add_constant(Value::String(name.to_string().into()))
+        let existing = self.chunk().constants.iter().position(|constant| {
+            matches!(constant, Value::String(constant_name) if **constant_name == name)
+        });
+        match existing {
+            Some(index) => Ok(index as u16),
+            None => self.chunk().add_constant(Value::String(name.into())),
+        }
+    }
+
+    fn define_variable(&mut self, name: String) -> Result<(), String> {
+        if self.scope_depth == 0 {
+            let index = self.identifier_constant(name)?;
+            self.emit(Operation::DefineGlobal(index));
+        } else {
+            let depth = self.scope_depth;
+            self.locals.push(Local { name, depth });
+        }
+        Ok(())
     }
 
     // ---------- statements ----------
@@ -123,13 +141,13 @@ impl Compiler {
                 self.function_declaration(name, parameters, body)
             }
             Statement::VariableDeclaration { name, initializer } => {
-                self.variable_declaration(name, initializer.as_ref())
+                self.variable_declaration(name, initializer)
             }
             Statement::PrintStatement(expression) => {
                 self.print_statement(expression)
             }
             Statement::IfStatement { condition, then_branch, else_branch } => {
-                self.if_statement(condition, then_branch, else_branch.as_deref())
+                self.if_statement(condition, then_branch, else_branch)
             }
             Statement::WhileStatement { condition, block } => {
                 self.while_statement(condition, block)
@@ -141,7 +159,7 @@ impl Compiler {
                 self.expression_statement(expression)
             }
             Statement::ReturnStatement { value } => {
-                self.return_statement(value.as_ref())
+                self.return_statement(value)
             }
             Statement::BreakStatement => {
                 self.break_statement()
@@ -155,21 +173,20 @@ impl Compiler {
     fn function_declaration(
         &mut self,
         name: String,
-        parameters: &[String],
+        parameters: Vec<String>,
         body: Vec<Statement>,
     ) -> Result<(), String> {
-        let name_index = self.chunk().add_constant(Value::String(name.to_string().into()))?;
-        let mut compiler = Compiler::new(name.to_string(), self.scope_depth + 1);
+        let mut compiler = Compiler::new(name.clone(), 1);
+        compiler.function.arity = parameters.len();
+        for parameter in parameters {
+            compiler.define_variable(parameter)?;
+        }
         for statement in body {
             compiler.statement(statement)?;
         }
         let function = compiler.finish()?;
-        let function_index = self.chunk().add_constant(Value::Function(function.into()))?;
-
-        self.emit(Operation::GetConstant(function_index));
-        //
-
-        Ok(())
+        self.emit_constant(Value::Function(function.into()))?;
+        self.define_variable(name)
     }
 
     fn variable_declaration(
@@ -177,7 +194,13 @@ impl Compiler {
         name: String,
         initializer: Option<Expression>,
     ) -> Result<(), String> {
-        todo!()
+        match initializer {
+            Some(expression) => self.expression(expression)?,
+            None => {
+                self.emit(Operation::Null);
+            }
+        }
+        self.define_variable(name)
     }
 
     fn print_statement(&mut self, expression: Expression) -> Result<(), String> {
@@ -290,15 +313,9 @@ impl Compiler {
                         self.emit(Operation::Not)
                     },
                     Token::Greater => self.emit(Operation::Greater),
-                    Token::GreaterEqual => {
-                        self.emit(Operation::Less);
-                        self.emit(Operation::Not)
-                    },
+                    Token::GreaterEqual => self.emit(Operation::GreaterEqual),
                     Token::Less => self.emit(Operation::Less),
-                    Token::LessEqual => {
-                        self.emit(Operation::Greater);
-                        self.emit(Operation::Not)
-                    },
+                    Token::LessEqual => self.emit(Operation::LessEqual),
                     _ => return Err("Expected binary operator".to_string()),
                 };
             },

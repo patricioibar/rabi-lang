@@ -130,8 +130,8 @@ impl<W: Write> Runtime<W> {
                         .ok_or_else(|| overflow("negation")),
                     Value::Decimal(d) => Ok(Value::Decimal(-d)),
                     _ => Err(format!(
-                        "Unsupported operand type for unary minus: {:?}",
-                        value
+                        "Unsupported operand type for unary minus: {}",
+                        value.type_name()
                     )),
                 }
             }
@@ -206,21 +206,26 @@ impl<W: Write> Runtime<W> {
         function: &Expression,
         arguments: &[Expression],
     ) -> Result<Value, String> {
-        let Value::Function(function) = self.evaluate_expression(function)? else {
+        let callee = self.evaluate_expression(function)?;
+        let mut argument_values = Vec::with_capacity(arguments.len());
+        for argument in arguments {
+            argument_values.push(self.evaluate_expression(argument)?);
+        }
+
+        let Value::Function(function) = callee else {
             return Err("Attempted to call a non-function value".to_string());
         };
 
-        if arguments.len() != function.parameters.len() {
+        if argument_values.len() != function.parameters.len() {
             return Err(format!(
                 "Expected {} arguments but got {}",
                 function.parameters.len(),
-                arguments.len()
+                argument_values.len()
             ));
         }
 
         let new_scope = Scope::new(Some(self.global_scope.clone()));
-        for (parameter, argument) in function.parameters.iter().zip(arguments) {
-            let argument_value = self.evaluate_expression(argument)?;
+        for (parameter, argument_value) in function.parameters.iter().zip(argument_values) {
             new_scope.define(parameter.clone(), argument_value);
         }
 
