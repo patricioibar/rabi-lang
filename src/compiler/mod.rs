@@ -20,8 +20,6 @@ struct Local {
     depth: usize,
 }
 
-/// Estado de compilación de UNA función. Cada declaración de función
-/// crea un Compiler nuevo con su propio chunk y sus propias locales.
 struct Compiler {
     function: Function,
     locals: Vec<Local>,
@@ -36,7 +34,10 @@ impl Compiler {
                 arity: 0,
                 chunk: Chunk::new(),
             },
-            locals: Vec::new(),
+            locals: vec![Local {
+                name: String::new(),
+                depth: 0,
+            }],
             scope_depth,
         }
     }
@@ -66,12 +67,17 @@ impl Compiler {
     }
 
     fn emit_jump(&mut self, op: fn(u16) -> Operation) -> usize {
-        self.emit(Operation::Jump(0xffff))
+        self.emit(op(0xffff))
     }
 
     fn patch_jump(&mut self, index: usize) -> Result<(), String> {
-        let jump_offset = self.chunk().code.len() - index - 1;
-        self.chunk().patch(index, Operation::Jump(jump_offset as u16));
+        let jump_offset = (self.chunk().code.len() - index - 1) as u16;
+        let op = match self.chunk().code[index] {
+            Operation::Jump(_) => Operation::Jump(jump_offset),
+            Operation::JumpIfFalse(_) => Operation::JumpIfFalse(jump_offset),
+            _ => return Err("Expected jump operation".to_string()),
+        };
+        self.chunk().patch(index, op);
         Ok(())
     }
 
@@ -109,7 +115,6 @@ impl Compiler {
     }
 
     // ---------- statements ----------
-    // Regla: un statement deja la pila como la encontró.
 
     #[rustfmt::skip]
     fn statement(&mut self, stmt: Statement) -> Result<(), String> {
@@ -201,9 +206,10 @@ impl Compiler {
         todo!()
     }
 
-    /// Compila la expresión y descarta su valor con Pop.
     fn expression_statement(&mut self, expression: Expression) -> Result<(), String> {
-        todo!()
+        self.expression(expression)?;
+        self.emit(Operation::Pop);
+        Ok(())
     }
 
     fn return_statement(&mut self, value: Option<Expression>) -> Result<(), String> {
@@ -219,7 +225,6 @@ impl Compiler {
     }
 
     // ---------- expressions ----------
-    // Regla: una expresión deja exactamente un valor en la pila.
 
     #[rustfmt::skip]
     fn expression(&mut self, expression: Expression) -> Result<(), String> {
@@ -244,16 +249,91 @@ impl Compiler {
                     _ => return Err("Expected literal".to_string()),
                 }
             },
-            Expression::Unary { operator, operand } => todo!(),
-            Expression::Binary { left, operator, right } => todo!(),
-            Expression::Grouping { expression } => todo!(),
-            Expression::Variable { name } => todo!(),
+            Expression::Unary { operator, operand } => {
+                self.expression(*operand)?;
+                match operator {
+                    Token::Minus => self.emit(Operation::Negate),
+                    Token::Bang => self.emit(Operation::Not),
+                    _ => return Err("Expected unary operator".to_string()),
+                };
+            },
+            Expression::Binary { left, operator: Token::And, right } => {
+                self.expression(*left)?;
+                let end_jump = self.emit_jump(Operation::JumpIfFalse);
+                self.emit(Operation::Pop);
+                self.expression(*right)?;
+                self.patch_jump(end_jump)?;
+                self.emit(Operation::Not);
+                self.emit(Operation::Not);
+            },
+            Expression::Binary { left, operator: Token::Or, right } => {
+                self.expression(*left)?;
+                let else_jump = self.emit_jump(Operation::JumpIfFalse);
+                let end_jump = self.emit_jump(Operation::Jump);
+                self.patch_jump(else_jump)?;
+                self.emit(Operation::Pop);
+                self.expression(*right)?;
+                self.patch_jump(end_jump)?;
+            },
+            Expression::Binary { left, operator, right } => {
+                self.expression(*left)?;
+                self.expression(*right)?;
+                match operator {
+                    Token::Plus => self.emit(Operation::Add),
+                    Token::Minus => self.emit(Operation::Subtract),
+                    Token::Asterisk => self.emit(Operation::Multiply),
+                    Token::Slash => self.emit(Operation::Divide),
+                    Token::Percent => self.emit(Operation::Modulo),
+                    Token::EqualEqual => self.emit(Operation::Equal),
+                    Token::BangEqual => {
+                        self.emit(Operation::Equal);
+                        self.emit(Operation::Not)
+                    },
+                    Token::Greater => self.emit(Operation::Greater),
+                    Token::GreaterEqual => {
+                        self.emit(Operation::Less);
+                        self.emit(Operation::Not)
+                    },
+                    Token::Less => self.emit(Operation::Less),
+                    Token::LessEqual => {
+                        self.emit(Operation::Greater);
+                        self.emit(Operation::Not)
+                    },
+                    _ => return Err("Expected binary operator".to_string()),
+                };
+            },
+            Expression::Grouping { expression } => {
+                self.expression(*expression)?;
+            },
+            Expression::Variable { name } => {
+                if let Some(index) = self.resolve_local(name.clone()) {
+                    self.emit(Operation::GetLocal(index));
+                } else {
+                    let index = self.identifier_constant(name.clone())?;
+                    self.emit(Operation::GetGlobal(index));
+                }
+            },
+            Expression::Assignment { name, value } => {
+                self.expression(*value)?;
+                if let Some(index) = self.resolve_local(name.clone()) {
+                    self.emit(Operation::SetLocal(index));
+                } else {
+                    let index = self.identifier_constant(name.clone())?;
+                    self.emit(Operation::SetGlobal(index));
+                }
+            },
+            Expression::Call { function, arguments } => {
+                self.expression(*function)?;
+                let arg_count = arguments.len() as u16;
+                for arg in arguments {
+                    self.expression(arg)?;
+                }
+                self.emit(Operation::Call(arg_count));
+            },
             Expression::ArrayLiteral { elements } => todo!(),
             Expression::Index { collection, index } => todo!(),
             Expression::Len { operand } => todo!(),
-            Expression::Assignment { name, value } => todo!(),
             Expression::IndexAssignment { collection, index, value } => todo!(),
-            Expression::Call { function, arguments } => todo!(),
         }
         Ok(())
     }
