@@ -3,6 +3,7 @@
 CARGO ?= cargo
 FILE ?=
 ARGS ?=
+TASKSET ?= taskset -c 0
 
 .DEFAULT_GOAL := help
 .PHONY: help install build run test bench
@@ -23,5 +24,5 @@ run: ## Ejecuta un programa sin instalar: make run FILE=programa.rabi [ARGS=--sc
 test: ## Corre los tests de integración sobre tests/test-programs/
 	$(CARGO) test --test interpreter --test vm
 
-bench: ## Corre el benchmark (rabi vs Python vs Rust) e imprime los tiempos
-	$(CARGO) bench
+bench: ## Corre el benchmark (rabi vs Python vs Rust) fijado al CPU 0 e imprime los tiempos
+	$(TASKSET) $(CARGO) bench

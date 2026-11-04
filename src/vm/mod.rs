@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    hash::{BuildHasherDefault, Hasher},
     io::{Stdout, Write},
     rc::Rc,
 };
@@ -11,6 +12,26 @@ mod vm_test;
 
 const MAX_FRAMES: usize = 1024;
 
+#[derive(Default)]
+struct FxHasher {
+    hash: u64,
+}
+
+impl Hasher for FxHasher {
+    fn write(&mut self, bytes: &[u8]) {
+        for &byte in bytes {
+            self.hash =
+                (self.hash.rotate_left(5) ^ byte as u64).wrapping_mul(0x51_7c_c1_b7_27_22_0a_95);
+        }
+    }
+
+    fn finish(&self) -> u64 {
+        self.hash
+    }
+}
+
+type Globals = HashMap<String, Value, BuildHasherDefault<FxHasher>>;
+
 struct CallFrame {
     function: Rc<Function>,
     ip: usize,
@@ -20,7 +41,7 @@ struct CallFrame {
 pub struct Vm<W: Write = Stdout> {
     stack: Vec<Value>,
     frames: Vec<CallFrame>,
-    globals: HashMap<String, Value>,
+    globals: Globals,
     output: W,
 }
 
@@ -41,7 +62,7 @@ impl<W: Write> Vm<W> {
         Vm {
             stack: Vec::new(),
             frames: Vec::new(),
-            globals: HashMap::new(),
+            globals: Globals::default(),
             output,
         }
     }
@@ -71,8 +92,14 @@ impl<W: Write> Vm<W> {
                 Operation::False => self.push(Value::Boolean(false)),
 
                 Operation::GetConstant(i) => {
-                    let value = self.constant(i)?;
-                    self.push(value);
+                    let frame = self.frames.last().ok_or("No active frame")?;
+                    let constant = frame
+                        .function
+                        .chunk
+                        .constants
+                        .get(i as usize)
+                        .ok_or_else(|| format!("Constant {} out of bounds", i))?;
+                    self.stack.extend_from_slice(std::slice::from_ref(constant));
                 }
 
                 Operation::Pop => {
@@ -145,30 +172,35 @@ impl<W: Write> Vm<W> {
                     let value = self
                         .globals
                         .get(name.as_str())
-                        .cloned()
                         .ok_or_else(|| format!("Variable '{}' not defined", name))?;
-                    self.push(value);
+                    self.stack.extend_from_slice(std::slice::from_ref(value));
                 }
 
                 Operation::SetGlobal(i) => {
                     let name = self.constant_name(i)?;
-                    let value = self.peek(0)?.clone();
+                    let value = self.stack.last().ok_or("Stack underflow")?;
                     match self.globals.get_mut(name.as_str()) {
-                        Some(slot) => *slot = value,
+                        Some(slot) => slot.clone_from(value),
                         None => return Err(format!("Variable '{}' not defined", name)),
                     }
                 }
 
                 Operation::GetLocal(slot) => {
                     let index = self.frame()?.stack_slot + slot as usize;
-                    let value = self.stack.get(index).cloned().ok_or("Local slot out of bounds")?;
-                    self.push(value);
+                    if index >= self.stack.len() {
+                        return Err("Local slot out of bounds".to_string());
+                    }
+                    self.stack.extend_from_within(index..=index);
                 }
 
                 Operation::SetLocal(slot) => {
                     let index = self.frame()?.stack_slot + slot as usize;
-                    let value = self.peek(0)?.clone();
-                    *self.stack.get_mut(index).ok_or("Local slot out of bounds")? = value;
+                    let top = self.stack.len().checked_sub(1).ok_or("Stack underflow")?;
+                    let (below, rest) = self.stack.split_at_mut(top);
+                    below
+                        .get_mut(index)
+                        .ok_or("Local slot out of bounds")?
+                        .clone_from(&rest[0]);
                 }
 
                 Operation::Jump(offset) => {
@@ -273,19 +305,18 @@ impl<W: Write> Vm<W> {
         Ok(op)
     }
 
-    fn constant(&self, index: u16) -> Result<Value, String> {
+    fn constant(&self, index: u16) -> Result<&Value, String> {
         self.frame()?
             .function
             .chunk
             .constants
             .get(index as usize)
-            .cloned()
             .ok_or_else(|| format!("Constant {} out of bounds", index))
     }
 
     fn constant_name(&self, index: u16) -> Result<Rc<String>, String> {
         match self.constant(index)? {
-            Value::String(name) => Ok(name),
+            Value::String(name) => Ok(Rc::clone(name)),
             other => Err(format!(
                 "Expected a variable name constant, got {}",
                 other.type_name()
