@@ -336,3 +336,16 @@ fn indexing_reports_the_collection_type_then_the_index_type_then_the_bounds() {
     let error = array(vec![int(1)]).get_index(&int(1)).unwrap_err();
     assert_eq!(error, "Array index out of bounds: 1 (length 1)");
 }
+
+#[test]
+fn element_at_reads_until_the_end_of_an_array() {
+    let a = array(vec![int(1)]);
+    assert_eq!(a.element_at(0).unwrap(), Some(int(1)));
+    assert_eq!(a.element_at(1).unwrap(), None);
+}
+
+#[test]
+fn element_at_rejects_values_that_are_not_arrays() {
+    let error = string("abc").element_at(0).unwrap_err();
+    assert_eq!(error, "Unsupported type for iteration: String");
+}

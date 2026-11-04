@@ -185,6 +185,26 @@ impl<W: Write> Vm<W> {
                     self.frame_mut()?.ip -= offset as usize;
                 }
 
+                Operation::ForIter(offset) => {
+                    let position = match self.peek(0)? {
+                        Value::Integer(i) => *i as usize,
+                        other => {
+                            return Err(format!(
+                                "Corrupted for loop: expected an Integer counter, found {}",
+                                other.type_name()
+                            ))
+                        }
+                    };
+                    match self.peek(1)?.element_at(position)? {
+                        Some(element) => {
+                            *self.stack.last_mut().ok_or("Stack underflow")? =
+                                Value::Integer(position as i64 + 1);
+                            self.push(element);
+                        }
+                        None => self.frame_mut()?.ip += offset as usize,
+                    }
+                }
+
                 Operation::Call(arg_count) => {
                     self.call(arg_count as usize)?;
                 }

@@ -669,6 +669,81 @@ fn len_follows_its_operand() {
     );
 }
 
+// ------------------------------------------------------------------------ for
+
+#[test]
+fn a_for_loop_keeps_the_iterable_and_counter_below_the_loop_variable() {
+    let function = script("for x in [1, 2]:\n    print x\n");
+    assert_eq!(
+        function.chunk.code,
+        vec![
+            Op::GetConstant(0),
+            Op::GetConstant(1),
+            Op::BuildArray(2),
+            Op::GetConstant(2),
+            Op::ForIter(4),
+            Op::GetLocal(3),
+            Op::Print,
+            Op::Pop,
+            Op::Loop(5),
+            Op::Pop,
+            Op::Pop,
+            Op::Null,
+            Op::Return,
+        ]
+    );
+    assert_eq!(function.chunk.constants[2], Value::Integer(0));
+}
+
+#[test]
+fn break_in_a_for_loop_discards_the_loop_variable_and_lands_on_the_exit() {
+    assert_eq!(
+        code("for x in []:\n    if x: break\n"),
+        vec![
+            Op::BuildArray(0),
+            Op::GetConstant(0),
+            Op::ForIter(9),
+            Op::GetLocal(3),
+            Op::JumpIfFalse(4),
+            Op::Pop,
+            Op::Pop,
+            Op::Jump(4),
+            Op::Jump(1),
+            Op::Pop,
+            Op::Pop,
+            Op::Loop(10),
+            Op::Pop,
+            Op::Pop,
+            Op::Null,
+            Op::Return,
+        ]
+    );
+}
+
+#[test]
+fn continue_in_a_for_loop_returns_to_for_iter() {
+    let code = code("for x in []:\n    continue\n");
+    assert_eq!(code[2], Op::ForIter(4));
+    assert_eq!(code[3..6], [Op::Pop, Op::Loop(3), Op::Pop]);
+}
+
+#[test]
+fn a_for_loop_inside_a_function_uses_slots_after_the_parameters() {
+    let function = script("func f(a):\n    for x in a:\n        print x\n");
+    let f = function_constant(&function, "f");
+    assert_eq!(
+        f.chunk.code[..6],
+        [
+            Op::GetLocal(1),
+            Op::GetConstant(0),
+            Op::ForIter(4),
+            Op::GetLocal(4),
+            Op::Print,
+            Op::Pop,
+        ]
+    );
+}
+
 // -------------------------------------------------------------------- errors
 
 #[test]

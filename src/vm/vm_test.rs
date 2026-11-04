@@ -401,6 +401,66 @@ fn build_array_with_too_few_values_is_a_stack_underflow() {
     assert!(error.contains("Stack underflow"), "{error}");
 }
 
+#[test]
+fn for_iter_on_an_empty_array_jumps_without_pushing() {
+    let output = execute(
+        vec![Value::Integer(0)],
+        vec![
+            Op::BuildArray(0),
+            Op::GetConstant(0),
+            Op::ForIter(2),
+            Op::Print,
+            Op::Return,
+            Op::Print,
+            Op::Print,
+            Op::Null,
+            Op::Return,
+        ],
+    );
+    assert_eq!(output.unwrap(), "0\n[]\n");
+}
+
+#[test]
+fn for_iter_pushes_the_element_and_advances_the_counter() {
+    let output = execute(
+        vec![Value::Integer(7), Value::Integer(0)],
+        vec![
+            Op::GetConstant(0),
+            Op::BuildArray(1),
+            Op::GetConstant(1),
+            Op::ForIter(4),
+            Op::Print,
+            Op::Print,
+            Op::Null,
+            Op::Return,
+        ],
+    );
+    assert_eq!(output.unwrap(), "7\n1\n");
+}
+
+#[test]
+fn for_iter_rejects_an_iterable_that_is_not_an_array() {
+    let error = execute(
+        vec![Value::Integer(0)],
+        vec![Op::True, Op::GetConstant(0), Op::ForIter(0), Op::Return],
+    )
+    .unwrap_err();
+    assert!(
+        error.contains("Unsupported type for iteration: Boolean"),
+        "{error}"
+    );
+}
+
+#[test]
+fn for_iter_rejects_a_counter_that_is_not_an_integer() {
+    let error = execute(
+        vec![],
+        vec![Op::BuildArray(0), Op::Null, Op::ForIter(0), Op::Return],
+    )
+    .unwrap_err();
+    assert!(error.contains("Corrupted for loop"), "{error}");
+}
+
 // ================================================================== programs
 
 // ---------------------------------------------------------------------- print
@@ -853,6 +913,111 @@ fn an_index_assignment_evaluates_its_value_before_checking_the_bounds() {
     let (output, result) = run_keeping_output(source);
     assert!(result.unwrap_err().contains("out of bounds"));
     assert_eq!(output, "touched\n");
+}
+
+// ------------------------------------------------------------------------- for
+
+#[test]
+fn a_for_loop_visits_every_element_in_order() {
+    assert_eq!(
+        run("for x in [1, 2, 3]:\n    print x\n").unwrap(),
+        "1\n2\n3\n"
+    );
+    assert_eq!(run("for x in []:\n    print x\n").unwrap(), "");
+}
+
+#[test]
+fn continue_from_a_nested_block_skips_to_the_next_element() {
+    let source = concat!(
+        "for x in [1, 2, 3]:\n",
+        "    let y = x * 2\n",
+        "    if y == 4:\n",
+        "        let z = 0\n",
+        "        continue\n",
+        "    print y\n",
+        "print \"done\"\n",
+    );
+    assert_eq!(run(source).unwrap(), "2\n6\ndone\n");
+}
+
+#[test]
+fn break_leaves_a_for_loop() {
+    let source = concat!(
+        "for x in [1, 2, 3]:\n",
+        "    let y = x\n",
+        "    if x == 2: break\n",
+        "    print y\n",
+        "print \"done\"\n",
+    );
+    assert_eq!(run(source).unwrap(), "1\ndone\n");
+}
+
+#[test]
+fn nested_for_loops_keep_their_own_state() {
+    let source = concat!(
+        "for a in [1, 2]:\n",
+        "    for b in [10, 20]:\n",
+        "        if b == 20: continue\n",
+        "        print a + b\n",
+        "    print a\n",
+    );
+    assert_eq!(run(source).unwrap(), "11\n1\n12\n2\n");
+}
+
+#[test]
+fn a_for_loop_inside_a_function_can_return() {
+    let source = concat!(
+        "func find(arr, target):\n",
+        "    let i = 0\n",
+        "    for x in arr:\n",
+        "        if x == target: return i\n",
+        "        i = i + 1\n",
+        "    return -1\n",
+        "print find([5, 6, 7], 7)\n",
+        "print find([5, 6, 7], 8)\n",
+    );
+    assert_eq!(run(source).unwrap(), "2\n-1\n");
+}
+
+#[test]
+fn a_for_loop_reads_the_live_array() {
+    let source = "let arr = [1, 2, 3]\nfor x in arr:\n    arr[2] = 30\n    print x\n";
+    assert_eq!(run(source).unwrap(), "1\n2\n30\n");
+}
+
+#[test]
+fn reassigning_the_iterated_variable_does_not_change_the_loop() {
+    let source = "let arr = [1, 2]\nfor x in arr:\n    arr = arr + [9]\n    print x\nprint arr\n";
+    assert_eq!(run(source).unwrap(), "1\n2\n[1, 2, 9, 9]\n");
+}
+
+#[test]
+fn assigning_the_loop_variable_does_not_change_the_array() {
+    let source = "let arr = [1, 2]\nfor x in arr:\n    x = 0\nprint arr\n";
+    assert_eq!(run(source).unwrap(), "[1, 2]\n");
+}
+
+#[test]
+fn the_loop_variable_is_not_visible_after_the_loop() {
+    let error = run("for x in [1]:\n    print x\nprint x\n").unwrap_err();
+    assert!(error.contains("Variable 'x' not defined"), "{error}");
+}
+
+#[test]
+fn the_iterable_resolves_before_the_loop_variable_is_declared() {
+    assert_eq!(
+        run("let x = [1, 2]\nfor x in x:\n    print x\n").unwrap(),
+        "1\n2\n"
+    );
+}
+
+#[test]
+fn iterating_something_that_is_not_an_array_is_an_error() {
+    let error = run("for x in 5:\n    print x\n").unwrap_err();
+    assert!(
+        error.contains("Unsupported type for iteration: Integer"),
+        "{error}"
+    );
 }
 
 // ---------------------------------------------------------------------- errors

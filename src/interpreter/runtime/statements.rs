@@ -121,21 +121,9 @@ impl<W: Write> Runtime<W> {
         block: &[Statement],
     ) -> Result<ControlFlow, String> {
         let iterable = self.evaluate_expression(iterable)?;
-        let Value::Array(elements) = &iterable else {
-            return Err(format!(
-                "Unsupported type for iteration: {}",
-                iterable.type_name()
-            ));
-        };
 
         let mut position = 0;
-        loop {
-            // Read one element at a time, never holding the borrow across the
-            // block, so the block may mutate the array it is walking.
-            let element = elements.borrow().get(position).cloned();
-            let Some(element) = element else {
-                break;
-            };
+        while let Some(element) = iterable.element_at(position)? {
             position += 1;
 
             match self.run_block_with(Some((variable, element)), block)? {

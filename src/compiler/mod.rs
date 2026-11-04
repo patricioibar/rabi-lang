@@ -90,6 +90,7 @@ impl Compiler {
         let op = match self.chunk().code[index] {
             Operation::Jump(_) => Operation::Jump(jump_offset),
             Operation::JumpIfFalse(_) => Operation::JumpIfFalse(jump_offset),
+            Operation::ForIter(_) => Operation::ForIter(jump_offset),
             _ => return Err("Expected jump operation".to_string()),
         };
         self.chunk().patch(index, op);
@@ -339,7 +340,35 @@ impl Compiler {
         iterable: Expression,
         block: Vec<Statement>,
     ) -> Result<(), String> {
-        todo!()
+        self.expression(iterable)?;
+        self.emit_constant(Value::Integer(0))?;
+        self.begin_scope();
+        self.define_variable("(iter)".to_string())?;
+        self.define_variable("(index)".to_string())?;
+
+        let start = self.chunk().code.len();
+        let exit = self.emit_jump(Operation::ForIter);
+        self.loops.push(Loop {
+            start,
+            depth: self.scope_depth,
+            break_jumps: Vec::new(),
+        });
+
+        self.begin_scope();
+        self.define_variable(variable)?;
+        for stmt in block {
+            self.statement(stmt)?;
+        }
+        self.end_scope();
+        self.emit_loop(start)?;
+
+        self.patch_jump(exit)?;
+        let finished_loop = self.loops.pop().ok_or("Loop stack underflow")?;
+        for jump in finished_loop.break_jumps {
+            self.patch_jump(jump)?;
+        }
+        self.end_scope();
+        Ok(())
     }
 
     // ---------- expressions ----------

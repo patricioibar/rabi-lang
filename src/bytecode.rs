@@ -36,6 +36,7 @@ pub enum Operation {
     Loop(u16),
     JumpIfFalse(u16),
     Jump(u16),
+    ForIter(u16),
 }
 
 use crate::compiler::Chunk;

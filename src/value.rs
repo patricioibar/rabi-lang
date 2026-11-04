@@ -88,6 +88,16 @@ impl<F> Value<F> {
         }
     }
 
+    pub fn element_at(&self, position: usize) -> Result<Option<Value<F>>, String> {
+        match self {
+            Value::Array(elements) => Ok(elements.borrow().get(position).cloned()),
+            other => Err(format!(
+                "Unsupported type for iteration: {}",
+                other.type_name()
+            )),
+        }
+    }
+
     pub fn len(&self) -> Result<Value<F>, String> {
         match self {
             Value::Array(elements) => Ok(Value::Integer(elements.borrow().len() as i64)),
