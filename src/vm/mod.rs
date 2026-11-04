@@ -137,14 +137,14 @@ impl<W: Write> Vm<W> {
                 Operation::DefineGlobal(i) => {
                     let name = self.constant_name(i)?;
                     let value = self.pop()?;
-                    self.globals.insert(name, value);
+                    self.globals.insert(name.to_string(), value);
                 }
 
                 Operation::GetGlobal(i) => {
                     let name = self.constant_name(i)?;
                     let value = self
                         .globals
-                        .get(&name)
+                        .get(name.as_str())
                         .cloned()
                         .ok_or_else(|| format!("Variable '{}' not defined", name))?;
                     self.push(value);
@@ -153,7 +153,7 @@ impl<W: Write> Vm<W> {
                 Operation::SetGlobal(i) => {
                     let name = self.constant_name(i)?;
                     let value = self.peek(0)?.clone();
-                    match self.globals.get_mut(&name) {
+                    match self.globals.get_mut(name.as_str()) {
                         Some(slot) => *slot = value,
                         None => return Err(format!("Variable '{}' not defined", name)),
                     }
@@ -283,9 +283,9 @@ impl<W: Write> Vm<W> {
             .ok_or_else(|| format!("Constant {} out of bounds", index))
     }
 
-    fn constant_name(&self, index: u16) -> Result<String, String> {
+    fn constant_name(&self, index: u16) -> Result<Rc<String>, String> {
         match self.constant(index)? {
-            Value::String(name) => Ok(name.to_string()),
+            Value::String(name) => Ok(name),
             other => Err(format!(
                 "Expected a variable name constant, got {}",
                 other.type_name()
