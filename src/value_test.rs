@@ -251,6 +251,10 @@ fn overflow_is_reported_per_operation() {
         (int(i64::MIN) / int(-1)).unwrap_err(),
         "Integer overflow in division"
     );
+    assert_eq!(
+        int(i64::MIN).modulo(int(-1)).unwrap_err(),
+        "Integer overflow in modulo"
+    );
 }
 
 #[test]

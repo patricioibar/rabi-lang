@@ -219,7 +219,9 @@ impl<F> Value<F> {
                 if b == 0 {
                     return Err(DIVISION_BY_ZERO.to_string());
                 }
-                Ok(Value::Integer(a % b))
+                a.checked_rem(b)
+                    .map(Value::Integer)
+                    .ok_or_else(|| overflow("modulo"))
             }
             (Value::Decimal(a), Value::Decimal(b)) => {
                 if b == 0.0 {
