@@ -23,20 +23,27 @@ make
 ## Uso
 
 ```bash
-rabi <archivo>  [ --scanning | --parsing ]
+rabi [ --backend interpreter | --backend vm ] [ --scanning | --parsing ] [ <archivo> ]
 ```
 
-Para ejecutar un compilador en modo interactivo, simplemente ejecutar el programa sin argumentos.
+Si se provee un archivo, el programa lo ejecutará y mostrará el resultado en la salida estándar. Sin archivo, abre el modo interactivo (REPL) que conserva las variables y funciones entre entradas.
 
 Sin instalar el binario, se puede correr un programa desde la raíz del proyecto con:
 
 ```bash
-make run FILE=<archivo> [ ARGS="--scanning" ]
+make run FILE=<archivo> [ ARGS="--backend vm" ]
 ```
 
-Si se provee un archivo, el programa lo ejecutará y mostrará el resultado en la salida estándar.
+### Intérprete o compilador
 
-Los parámetros de `scanning` y `parsing` son mutuamente excluyentes. Si se provee alguno de ellos, el programa detendrá la ejecución en la etapa correspondiente y mostrará el resultado en la salida estándar.
+El parámetro `--backend` elige cómo se ejecuta el programa:
+
+- `--backend interpreter` (valor por defecto): ejecuta con el intérprete (tree-walk interpreter).
+- `--backend vm`: compila el programa a bytecode y lo ejecuta en una máquina virtual.
+
+### Etapas intermedias
+
+Los parámetros de `scanning` y `parsing` son mutuamente excluyentes. Si se provee alguno de ellos, el programa detendrá la ejecución en la etapa correspondiente y mostrará el resultado en la salida estándar. En ese caso `--backend` no tiene efecto.
 
 ## Entrega parcial - Intérprete
 
@@ -49,7 +56,7 @@ Se encuentran tests de integración en el directorio `tests/`. Para ejecutarlos,
 make test
 ```
 
-Los tests corren los programas encontrados en `tests/test-programs/`, los cuales son equivalentes a los provistos por la cátedra, adaptados para el lenguaje `rabi`.
+Los tests corren los programas encontrados en `tests/test-programs/`, los cuales son equivalentes a los provistos por la cátedra, adaptados para el lenguaje `rabi`. Cada programa se ejecuta con los dos backends: `tests/interpreter.rs` usa el intérprete y `tests/vm.rs` usa el compilador y la VM.También se verifica que la salida sea la misma en las dos ejecuciones.
 
 ## Benchmark
 Se encuentra adjunto un benchmark. Se implementó un mismo programa en rabi, Python y Rust. Para correrlo y ver los tiempos de ejecución, se puede usar el siguiente comando:

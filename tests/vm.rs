@@ -4,20 +4,9 @@ use std::path::Path;
 
 use rabi::{compiler, interpreter::Interpreter, vm::Vm};
 
-/// Programs that use features the compiler does not support yet.
-const PENDING: &[&str] = &[
-    "5-arrays.rabi",   // arrays
-    "6-forloops.rabi", // arrays and for loops
-];
-
 #[test]
 fn test_integration_programs() {
-    common::check_all_programs(|path| {
-        if PENDING.contains(&common::program_name(path).as_str()) {
-            return Ok(());
-        }
-        check_program(path)
-    });
+    common::check_all_programs(check_program);
 }
 
 /// The VM must pass the program and print exactly what the interpreter prints.

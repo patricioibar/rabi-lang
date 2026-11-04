@@ -1,12 +1,15 @@
 use std::io::{BufRead, BufReader, Write};
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 
 use rabi::{
+    compiler,
     interpreter::Interpreter,
     parser,
     scanner::{self, Scanner},
+    statement::Statement,
     token::Token,
+    vm::Vm,
 };
 
 use crate::mode::Mode;
@@ -24,8 +27,45 @@ struct Args {
     #[arg(long, conflicts_with = "scanning")]
     parsing: bool,
 
+    /// Execution backend.
+    #[arg(long, value_enum, default_value_t = Backend::Interpreter)]
+    backend: Backend,
+
     /// Input file.
     filename: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum Backend {
+    /// Tree-walking interpreter.
+    Interpreter,
+    /// Bytecode compiler and virtual machine.
+    Vm,
+}
+
+enum Runner {
+    Interpreter(Interpreter),
+    Vm(Vm),
+}
+
+impl Runner {
+    fn new(backend: Backend) -> Self {
+        match backend {
+            Backend::Interpreter => Runner::Interpreter(Interpreter::new()),
+            Backend::Vm => Runner::Vm(Vm::new()),
+        }
+    }
+
+    fn run(&mut self, statements: Vec<Statement>) -> Result<(), String> {
+        match self {
+            Runner::Interpreter(interpreter) => interpreter.run(&statements),
+            Runner::Vm(vm) => {
+                let script =
+                    compiler::compile(statements).map_err(|e| format!("Error compiling: {}", e))?;
+                vm.run(script)
+            }
+        }
+    }
 }
 
 fn main() -> Result<(), i32> {
@@ -33,18 +73,18 @@ fn main() -> Result<(), i32> {
     let mode = Mode::from(&args)?;
 
     if let Some(filename) = &args.filename {
-        file_mode(filename, mode)?;
+        file_mode(filename, mode, args.backend)?;
     } else {
-        inline_mode(mode)?;
+        inline_mode(mode, args.backend)?;
     }
 
     Ok(())
 }
 
-fn inline_mode(mode: Mode) -> Result<(), i32> {
+fn inline_mode(mode: Mode, backend: Backend) -> Result<(), i32> {
     let input = BufReader::new(std::io::stdin());
     let mut lines = input.lines();
-    let mut interpreter = Interpreter::new();
+    let mut runner = Runner::new(backend);
     let mut scanner = Scanner::new();
     loop {
         let prompt = if scanner.is_block_open() {
@@ -74,14 +114,14 @@ fn inline_mode(mode: Mode) -> Result<(), i32> {
             continue;
         }
 
-        if let Err(e) = run_tokens(scanner.finish(), &mode, &mut interpreter) {
+        if let Err(e) = run_tokens(scanner.finish(), &mode, &mut runner) {
             eprintln!("Error processing line: {}", e);
         }
     }
     Ok(())
 }
 
-fn file_mode(filename: &str, mode: Mode) -> Result<(), i32> {
+fn file_mode(filename: &str, mode: Mode, backend: Backend) -> Result<(), i32> {
     let file = std::fs::File::open(filename).map_err(|e| {
         eprintln!("Error opening file {}: {}", filename, e);
         1
@@ -90,17 +130,13 @@ fn file_mode(filename: &str, mode: Mode) -> Result<(), i32> {
         eprintln!("Error scanning file {}: {}", filename, e);
         2
     })?;
-    run_tokens(tokens, &mode, &mut Interpreter::new()).map_err(|e| {
+    run_tokens(tokens, &mode, &mut Runner::new(backend)).map_err(|e| {
         eprintln!("Error processing file {}: {}", filename, e);
         3
     })
 }
 
-fn run_tokens(
-    tokens: Vec<Token>,
-    mode: &Mode,
-    interpreter: &mut Interpreter,
-) -> Result<(), String> {
+fn run_tokens(tokens: Vec<Token>, mode: &Mode, runner: &mut Runner) -> Result<(), String> {
     if mode == &Mode::Scanning {
         for token in tokens {
             println!("{:?}", token);
@@ -116,7 +152,5 @@ fn run_tokens(
         return Ok(());
     }
 
-    interpreter.run(&statements)?;
-
-    Ok(())
+    runner.run(statements)
 }
