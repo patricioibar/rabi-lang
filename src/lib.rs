@@ -6,4 +6,8 @@ pub mod parser;
 pub mod scanner;
 pub mod statement;
 pub mod token;
+pub mod value;
+
+#[cfg(test)]
+mod value_test;
 pub mod vm;

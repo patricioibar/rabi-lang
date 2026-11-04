@@ -5,7 +5,7 @@ use std::rc::Rc;
 use super::{BREAK_OUTSIDE_LOOP, CONTINUE_OUTSIDE_LOOP, ControlFlow, Runtime};
 use crate::expression::Expression;
 use crate::interpreter::scope::Scope;
-use crate::interpreter::value::{Value, overflow};
+use crate::interpreter::value::Value;
 use crate::token::Token;
 
 /// The elements an [`Expression::Index`] resolves to, aliased with every other
@@ -123,17 +123,7 @@ impl<W: Write> Runtime<W> {
         match operator {
             Token::Minus => {
                 let value = self.evaluate_expression(operand)?;
-                match value {
-                    Value::Integer(i) => i
-                        .checked_neg()
-                        .map(Value::Integer)
-                        .ok_or_else(|| overflow("negation")),
-                    Value::Decimal(d) => Ok(Value::Decimal(-d)),
-                    _ => Err(format!(
-                        "Unsupported operand type for unary minus: {}",
-                        value.type_name()
-                    )),
-                }
+                value.negate()
             }
             Token::Bang => {
                 let value = self.evaluate_expression(operand)?;
@@ -247,7 +237,7 @@ fn eval_literal(value: &Token) -> Result<Value, String> {
     match value {
         Token::Integer(i) => Ok(Value::Integer(*i)),
         Token::Decimal(d) => Ok(Value::Decimal(*d)),
-        Token::StringLiteral(s) => Ok(Value::String(s.clone())),
+        Token::StringLiteral(s) => Ok(Value::string(s.as_str())),
         Token::True => Ok(Value::Boolean(true)),
         Token::False => Ok(Value::Boolean(false)),
         Token::Null => Ok(Value::Null),
