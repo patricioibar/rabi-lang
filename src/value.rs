@@ -4,13 +4,15 @@ pub trait FunctionValue: PartialEq + Debug {
     fn name(&self) -> &str;
 }
 
+type Elements<F> = RefCell<Vec<Value<F>>>;
+
 #[derive(Debug)]
 pub enum Value<F> {
     Integer(i64),
     Decimal(f64),
     String(Rc<String>),
     Boolean(bool),
-    Array(Rc<RefCell<Vec<Value<F>>>>),
+    Array(Rc<Elements<F>>),
     Function(Rc<F>),
     Null,
 }
@@ -84,6 +86,47 @@ impl<F> Value<F> {
             Value::Function(_) => "Function",
             Value::Null => "Null",
         }
+    }
+
+    pub fn len(&self) -> Result<Value<F>, String> {
+        match self {
+            Value::Array(elements) => Ok(Value::Integer(elements.borrow().len() as i64)),
+            other => Err(format!("Unsupported type for len: {}", other.type_name())),
+        }
+    }
+
+    pub fn get_index(&self, index: &Value<F>) -> Result<Value<F>, String> {
+        let (elements, position) = self.index_target(index)?;
+        Ok(elements.borrow()[position].clone())
+    }
+
+    pub fn set_index(&self, index: &Value<F>, value: Value<F>) -> Result<(), String> {
+        let (elements, position) = self.index_target(index)?;
+        elements.borrow_mut()[position] = value;
+        Ok(())
+    }
+
+    fn index_target(&self, index: &Value<F>) -> Result<(&Elements<F>, usize), String> {
+        let Value::Array(elements) = self else {
+            return Err(format!(
+                "Unsupported type for indexing: {}",
+                self.type_name()
+            ));
+        };
+        let Value::Integer(position) = *index else {
+            return Err(format!(
+                "Array index must be an Integer, found {}",
+                index.type_name()
+            ));
+        };
+        let length = elements.borrow().len();
+        if position < 0 || position as usize >= length {
+            return Err(format!(
+                "Array index out of bounds: {} (length {})",
+                position, length
+            ));
+        }
+        Ok((elements, position as usize))
     }
 
     pub fn negate(self) -> Result<Value<F>, String> {

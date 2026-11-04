@@ -89,7 +89,12 @@ fn booleans_and_null_have_their_own_operations() {
     assert_eq!(code("print true\n")[0], Op::True);
     assert_eq!(code("print false\n")[0], Op::False);
     assert_eq!(code("print null\n")[0], Op::Null);
-    assert!(script("print true\nprint false\nprint null\n").chunk.constants.is_empty());
+    assert!(
+        script("print true\nprint false\nprint null\n")
+            .chunk
+            .constants
+            .is_empty()
+    );
 }
 
 // --------------------------------------------------------------- expressions
@@ -98,7 +103,13 @@ fn booleans_and_null_have_their_own_operations() {
 fn unary_operators_follow_their_operand() {
     assert_eq!(
         code("print -1\n"),
-        vec![Op::GetConstant(0), Op::Negate, Op::Print, Op::Null, Op::Return]
+        vec![
+            Op::GetConstant(0),
+            Op::Negate,
+            Op::Print,
+            Op::Null,
+            Op::Return
+        ]
     );
     assert_eq!(
         code("print !true\n"),
@@ -234,7 +245,12 @@ fn a_top_level_declaration_defines_a_global_after_its_initializer() {
     assert!(function.chunk.constants[1] == string("x"));
     assert_eq!(
         function.chunk.code,
-        vec![Op::GetConstant(0), Op::DefineGlobal(1), Op::Null, Op::Return]
+        vec![
+            Op::GetConstant(0),
+            Op::DefineGlobal(1),
+            Op::Null,
+            Op::Return
+        ]
     );
 }
 
@@ -336,7 +352,12 @@ fn a_function_declaration_loads_the_function_and_binds_its_name() {
     let function = script("func f(a, b):\n    return a + b\n");
     assert_eq!(
         function.chunk.code,
-        vec![Op::GetConstant(0), Op::DefineGlobal(1), Op::Null, Op::Return]
+        vec![
+            Op::GetConstant(0),
+            Op::DefineGlobal(1),
+            Op::Null,
+            Op::Return
+        ]
     );
     assert!(function.chunk.constants[1] == string("f"));
 }
@@ -370,7 +391,10 @@ fn parameters_are_the_first_locals_of_a_function() {
 fn a_bare_return_returns_null() {
     let function = script("func f():\n    return\n");
     let f = function_constant(&function, "f");
-    assert_eq!(f.chunk.code, vec![Op::Null, Op::Return, Op::Null, Op::Return]);
+    assert_eq!(
+        f.chunk.code,
+        vec![Op::Null, Op::Return, Op::Null, Op::Return]
+    );
 }
 
 #[test]
@@ -566,6 +590,83 @@ fn break_leaves_only_the_innermost_loop() {
     };
     // the break lands right after the inner loop, before `print 1`
     assert!(7 + (offset as usize) < print_index);
+}
+
+// --------------------------------------------------------------------- arrays
+
+#[test]
+fn an_array_literal_builds_from_its_elements_in_order() {
+    assert_eq!(
+        code("print [1, true]\n"),
+        vec![
+            Op::GetConstant(0),
+            Op::True,
+            Op::BuildArray(2),
+            Op::Print,
+            Op::Null,
+            Op::Return
+        ]
+    );
+    assert_eq!(
+        code("print []\n"),
+        vec![Op::BuildArray(0), Op::Print, Op::Null, Op::Return]
+    );
+}
+
+#[test]
+fn an_array_literal_is_never_a_constant() {
+    // arrays are mutable and shared, so each evaluation must build a new one
+    let function = script("print [1]\n");
+    assert!(
+        !function
+            .chunk
+            .constants
+            .iter()
+            .any(|c| matches!(c, Value::Array(_))),
+        "{:?}",
+        function.chunk.constants
+    );
+}
+
+#[test]
+fn indexing_pushes_collection_then_index() {
+    let function = script("let a = [1]\nprint a[0]\n");
+    assert_eq!(
+        function.chunk.code[3..],
+        [
+            Op::GetGlobal(1),
+            Op::GetConstant(2),
+            Op::GetIndex,
+            Op::Print,
+            Op::Null,
+            Op::Return
+        ]
+    );
+}
+
+#[test]
+fn an_index_assignment_pushes_collection_index_and_value() {
+    let function = script("let a = [1]\na[0] = 2\n");
+    assert_eq!(
+        function.chunk.code[3..],
+        [
+            Op::GetGlobal(1),
+            Op::GetConstant(2),
+            Op::GetConstant(3),
+            Op::SetIndex,
+            Op::Pop,
+            Op::Null,
+            Op::Return,
+        ]
+    );
+}
+
+#[test]
+fn len_follows_its_operand() {
+    assert_eq!(
+        code("print len []\n"),
+        vec![Op::BuildArray(0), Op::Len, Op::Print, Op::Null, Op::Return]
+    );
 }
 
 // -------------------------------------------------------------------- errors

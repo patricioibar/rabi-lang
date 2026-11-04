@@ -1,16 +1,10 @@
-use std::cell::RefCell;
 use std::io::Write;
-use std::rc::Rc;
 
 use super::{BREAK_OUTSIDE_LOOP, CONTINUE_OUTSIDE_LOOP, ControlFlow, Runtime};
 use crate::expression::Expression;
 use crate::interpreter::scope::Scope;
 use crate::interpreter::value::Value;
 use crate::token::Token;
-
-/// The elements an [`Expression::Index`] resolves to, aliased with every other
-/// binding holding the same array.
-type SharedElements = Rc<RefCell<Vec<Value>>>;
 
 impl<W: Write> Runtime<W> {
     pub(super) fn evaluate_expression(&mut self, expression: &Expression) -> Result<Value, String> {
@@ -63,15 +57,13 @@ impl<W: Write> Runtime<W> {
     }
 
     fn eval_len(&mut self, operand: &Expression) -> Result<Value, String> {
-        match self.evaluate_expression(operand)? {
-            Value::Array(elements) => Ok(Value::Integer(elements.borrow().len() as i64)),
-            other => Err(format!("Unsupported type for len: {}", other.type_name())),
-        }
+        self.evaluate_expression(operand)?.len()
     }
 
     fn eval_index(&mut self, collection: &Expression, index: &Expression) -> Result<Value, String> {
-        let (array, position) = self.eval_index_target(collection, index)?;
-        Ok(array.borrow()[position].clone())
+        let collection = self.evaluate_expression(collection)?;
+        let index = self.evaluate_expression(index)?;
+        collection.get_index(&index)
     }
 
     fn assign_index(
@@ -80,43 +72,11 @@ impl<W: Write> Runtime<W> {
         index: &Expression,
         value: &Expression,
     ) -> Result<Value, String> {
-        let (array, position) = self.eval_index_target(collection, index)?;
-        let value = self.evaluate_expression(value)?;
-        array.borrow_mut()[position] = value.clone();
-        Ok(value)
-    }
-
-    /// resolve `collection[index]`
-    fn eval_index_target(
-        &mut self,
-        collection: &Expression,
-        index: &Expression,
-    ) -> Result<(SharedElements, usize), String> {
         let collection = self.evaluate_expression(collection)?;
-        let Value::Array(array) = &collection else {
-            return Err(format!(
-                "Unsupported type for indexing: {}",
-                collection.type_name()
-            ));
-        };
-
         let index = self.evaluate_expression(index)?;
-        let Value::Integer(position) = index else {
-            return Err(format!(
-                "Array index must be an Integer, found {}",
-                index.type_name()
-            ));
-        };
-
-        let length = array.borrow().len();
-        if position < 0 || position as usize >= length {
-            return Err(format!(
-                "Array index out of bounds: {} (length {})",
-                position, length
-            ));
-        }
-
-        Ok((array.clone(), position as usize))
+        let value = self.evaluate_expression(value)?;
+        collection.set_index(&index, value.clone())?;
+        Ok(value)
     }
 
     fn eval_unary(&mut self, operator: &Token, operand: &Expression) -> Result<Value, String> {

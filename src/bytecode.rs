@@ -5,6 +5,7 @@ pub enum Operation {
     False,
     Return,
     Print,
+    Len,
     Pop,
     Negate,
     Add,
@@ -18,8 +19,11 @@ pub enum Operation {
     GreaterEqual,
     Less,
     LessEqual,
+    GetIndex,
+    SetIndex,
 
     Call(u16),
+    BuildArray(u16),
 
     GetConstant(u16),
     DefineGlobal(u16),

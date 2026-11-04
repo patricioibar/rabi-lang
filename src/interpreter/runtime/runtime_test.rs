@@ -673,3 +673,22 @@ fn a_loop_can_walk_an_array_with_len_and_assign_through_an_index() {
     );
     assert_eq!(interpret(source).unwrap(), "[10, 20, 30]\n");
 }
+
+#[test]
+fn an_index_assignment_evaluates_its_value_before_checking_the_bounds() {
+    let source = concat!(
+        "let a = [1]\n",
+        "func touch():\n",
+        "\tprint \"touched\"\n",
+        "\treturn 0\n",
+        "a[5] = touch()\n",
+    );
+    let mut output = Vec::new();
+    let tokens = scanner::scan(source.as_bytes()).unwrap();
+    let statements = parser::parse(tokens).unwrap();
+    let error = Runtime::new(&mut output)
+        .run_plain(&statements)
+        .unwrap_err();
+    assert!(error.contains("out of bounds"), "{error}");
+    assert_eq!(String::from_utf8(output).unwrap(), "touched\n");
+}

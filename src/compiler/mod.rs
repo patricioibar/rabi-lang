@@ -442,10 +442,28 @@ impl Compiler {
                 }
                 self.emit(Operation::Call(arg_count));
             },
-            Expression::ArrayLiteral { elements } => todo!(),
-            Expression::Index { collection, index } => todo!(),
-            Expression::Len { operand } => todo!(),
-            Expression::IndexAssignment { collection, index, value } => todo!(),
+            Expression::ArrayLiteral { elements } => {
+                let count = elements.len() as u16;
+                for element in elements {
+                    self.expression(element)?;
+                }
+                self.emit(Operation::BuildArray(count));
+            },
+            Expression::Index { collection, index } => {
+                self.expression(*collection)?;
+                self.expression(*index)?;
+                self.emit(Operation::GetIndex);
+            },
+            Expression::Len { operand } => {
+                self.expression(*operand)?;
+                self.emit(Operation::Len);
+            },
+            Expression::IndexAssignment { collection, index, value } => {
+                self.expression(*collection)?;
+                self.expression(*index)?;
+                self.expression(*value)?;
+                self.emit(Operation::SetIndex);
+            },
         }
         Ok(())
     }

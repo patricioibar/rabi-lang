@@ -246,7 +246,12 @@ fn jump_if_false_jumps_only_on_falsy_values_and_keeps_the_condition() {
 #[test]
 fn loop_jumps_backwards() {
     // counts a global from 0 to 2
-    let constants = vec![Value::Integer(0), string("i"), Value::Integer(3), Value::Integer(1)];
+    let constants = vec![
+        Value::Integer(0),
+        string("i"),
+        Value::Integer(3),
+        Value::Integer(1),
+    ];
     let code = vec![
         Op::GetConstant(0),
         Op::DefineGlobal(1),
@@ -309,7 +314,12 @@ fn return_discards_the_frame_and_leaves_only_the_result() {
         "seven",
         0,
         vec![Value::Integer(7), Value::Integer(99)],
-        vec![Op::GetConstant(1), Op::GetConstant(1), Op::GetConstant(0), Op::Return],
+        vec![
+            Op::GetConstant(1),
+            Op::GetConstant(1),
+            Op::GetConstant(0),
+            Op::Return,
+        ],
     );
     // the local below the call must still be in slot 1 after the call returns
     let output = execute(
@@ -349,6 +359,48 @@ fn calling_with_the_wrong_number_of_arguments_is_an_error() {
     assert!(error.contains("Expected 1 arguments but got 0"), "{error}");
 }
 
+// ---------------------------------------------------------------------- arrays
+
+#[test]
+fn build_array_collects_the_top_values_in_push_order() {
+    let output = execute(
+        vec![Value::Integer(1), Value::Integer(2)],
+        vec![
+            Op::GetConstant(0),
+            Op::GetConstant(1),
+            Op::BuildArray(2),
+            Op::Print,
+            Op::Null,
+            Op::Return,
+        ],
+    );
+    assert_eq!(output.unwrap(), "[1, 2]\n");
+}
+
+#[test]
+fn set_index_leaves_the_assigned_value_on_the_stack() {
+    let output = execute(
+        vec![Value::Integer(0), Value::Integer(7)],
+        vec![
+            Op::Null,
+            Op::BuildArray(1),
+            Op::GetConstant(0),
+            Op::GetConstant(1),
+            Op::SetIndex,
+            Op::Print,
+            Op::Null,
+            Op::Return,
+        ],
+    );
+    assert_eq!(output.unwrap(), "7\n");
+}
+
+#[test]
+fn build_array_with_too_few_values_is_a_stack_underflow() {
+    let error = execute(vec![], vec![Op::BuildArray(5), Op::Return]).unwrap_err();
+    assert!(error.contains("Stack underflow"), "{error}");
+}
+
 // ================================================================== programs
 
 // ---------------------------------------------------------------------- print
@@ -371,7 +423,10 @@ fn prints_every_kind_of_value() {
     assert_eq!(run("print \"hi\"\n").unwrap(), "hi\n");
     assert_eq!(run("print true\n").unwrap(), "true\n");
     assert_eq!(run("print null\n").unwrap(), "null\n");
-    assert_eq!(run("func f(): return 1\nprint f\n").unwrap(), "<function f>\n");
+    assert_eq!(
+        run("func f(): return 1\nprint f\n").unwrap(),
+        "<function f>\n"
+    );
 }
 
 // ----------------------------------------------------------------- expressions
@@ -593,7 +648,10 @@ fn calls_a_function_and_returns_a_value() {
 
 #[test]
 fn passes_several_arguments() {
-    assert_eq!(run("func sub(a, b): return a - b\nprint sub(5, 3)\n").unwrap(), "2\n");
+    assert_eq!(
+        run("func sub(a, b): return a - b\nprint sub(5, 3)\n").unwrap(),
+        "2\n"
+    );
 }
 
 #[test]
@@ -620,7 +678,8 @@ fn returns_from_inside_a_loop() {
 
 #[test]
 fn recursion_works() {
-    let source = "func fib(n):\n    if n < 2: return n\n    return fib(n - 1) + fib(n - 2)\nprint fib(10)\n";
+    let source =
+        "func fib(n):\n    if n < 2: return n\n    return fib(n - 1) + fib(n - 2)\nprint fib(10)\n";
     assert_eq!(run(source).unwrap(), "55\n");
 }
 
@@ -638,7 +697,10 @@ fn a_function_can_read_and_assign_globals() {
 
 #[test]
 fn a_function_reads_globals_declared_after_it() {
-    assert_eq!(run("func f(): return later\nlet later = 7\nprint f()\n").unwrap(), "7\n");
+    assert_eq!(
+        run("func f(): return later\nlet later = 7\nprint f()\n").unwrap(),
+        "7\n"
+    );
 }
 
 #[test]
@@ -649,7 +711,8 @@ fn a_parameter_shadows_a_global_without_overwriting_it() {
 
 #[test]
 fn a_callee_cannot_read_a_callers_local() {
-    let source = "func g(): return secret\nfunc f():\n    let secret = 1\n    return g()\nprint f()\n";
+    let source =
+        "func g(): return secret\nfunc f():\n    let secret = 1\n    return g()\nprint f()\n";
     let error = run(source).unwrap_err();
     assert!(error.contains("'secret' not defined"), "{error}");
 }
@@ -669,7 +732,8 @@ fn a_nested_function_is_not_callable_from_the_global_scope() {
 
 #[test]
 fn a_nested_function_cannot_read_the_locals_of_the_function_that_declared_it() {
-    let source = "func f():\n    let secret = 1\n    func g(): return secret\n    return g()\nprint f()\n";
+    let source =
+        "func f():\n    let secret = 1\n    func g(): return secret\n    return g()\nprint f()\n";
     let error = run(source).unwrap_err();
     assert!(error.contains("'secret' not defined"), "{error}");
 }
@@ -692,6 +756,103 @@ fn arguments_are_evaluated_before_checking_the_callee() {
 fn unbounded_recursion_is_a_stack_overflow() {
     let error = run("func f(): return f()\nf()\n").unwrap_err();
     assert!(error.contains("Stack overflow"), "{error}");
+}
+
+// ---------------------------------------------------------------------- arrays
+
+#[test]
+fn array_literals_index_and_len() {
+    assert_eq!(
+        run("print [1, \"dos\", [3], null]\n").unwrap(),
+        "[1, dos, [3], null]\n"
+    );
+    assert_eq!(run("print [1, 2,]\n").unwrap(), "[1, 2]\n");
+    assert_eq!(run("print [10, 20][1]\n").unwrap(), "20\n");
+    assert_eq!(run("print len [[1, 2], [3]][0]\n").unwrap(), "2\n");
+}
+
+#[test]
+fn arrays_are_shared_by_reference() {
+    let source = "let a = [1]\nlet b = a\nb[0] = 2\nprint a\n";
+    assert_eq!(run(source).unwrap(), "[2]\n");
+}
+
+#[test]
+fn repetition_copies_references_to_the_elements() {
+    let source = "let m = [[0]] * 2\nm[0][0] = 9\nprint m\n";
+    assert_eq!(run(source).unwrap(), "[[9], [9]]\n");
+}
+
+#[test]
+fn a_literal_builds_a_new_array_each_time_it_runs() {
+    let source = concat!(
+        "func make(): return [0]\n",
+        "let a = make()\n",
+        "a[0] = 1\n",
+        "print make()\n",
+    );
+    assert_eq!(run(source).unwrap(), "[0]\n");
+}
+
+#[test]
+fn an_index_assignment_yields_the_assigned_value() {
+    assert_eq!(
+        run("let a = [0, 0]\nprint a[1] = 5\nprint a\n").unwrap(),
+        "5\n[0, 5]\n"
+    );
+}
+
+#[test]
+fn arrays_passed_to_a_function_can_be_mutated_through_locals() {
+    let source = concat!(
+        "func fill(arr, v):\n",
+        "    let i = 0\n",
+        "    while i < len arr:\n",
+        "        arr[i] = v\n",
+        "        i = i + 1\n",
+        "let a = [1, 2, 3]\n",
+        "fill(a, 7)\n",
+        "print a\n",
+    );
+    assert_eq!(run(source).unwrap(), "[7, 7, 7]\n");
+}
+
+#[test]
+fn array_errors_match_the_interpreter() {
+    let error = run("print 1[0]\n").unwrap_err();
+    assert!(
+        error.contains("Unsupported type for indexing: Integer"),
+        "{error}"
+    );
+    let error = run("print [1][\"0\"]\n").unwrap_err();
+    assert!(
+        error.contains("Array index must be an Integer, found String"),
+        "{error}"
+    );
+    let error = run("print [1][-1]\n").unwrap_err();
+    assert!(
+        error.contains("Array index out of bounds: -1 (length 1)"),
+        "{error}"
+    );
+    let error = run("let a = [1]\na[1] = 0\n").unwrap_err();
+    assert!(
+        error.contains("Array index out of bounds: 1 (length 1)"),
+        "{error}"
+    );
+    let error = run("print len \"abc\"\n").unwrap_err();
+    assert!(
+        error.contains("Unsupported type for len: String"),
+        "{error}"
+    );
+}
+
+#[test]
+fn an_index_assignment_evaluates_its_value_before_checking_the_bounds() {
+    let source =
+        "let a = [1]\nfunc touch():\n    print \"touched\"\n    return 0\na[5] = touch()\n";
+    let (output, result) = run_keeping_output(source);
+    assert!(result.unwrap_err().contains("out of bounds"));
+    assert_eq!(output, "touched\n");
 }
 
 // ---------------------------------------------------------------------- errors

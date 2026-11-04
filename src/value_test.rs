@@ -303,3 +303,36 @@ fn multiplying_an_array_by_a_negative_integer_is_an_error() {
     let error = (array(vec![int(1)]) * int(-1)).unwrap_err();
     assert!(error.contains("negative"), "{error}");
 }
+
+#[test]
+fn len_counts_array_elements_and_rejects_other_types() {
+    assert_eq!(array(vec![int(1), int(2)]).len().unwrap(), int(2));
+    let error = string("abc").len().unwrap_err();
+    assert_eq!(error, "Unsupported type for len: String");
+}
+
+#[test]
+fn get_index_reads_an_element() {
+    let a = array(vec![int(10), int(20)]);
+    assert_eq!(a.get_index(&int(1)).unwrap(), int(20));
+}
+
+#[test]
+fn set_index_is_visible_through_every_reference() {
+    let a = array(vec![int(1)]);
+    let alias = a.clone();
+    alias.set_index(&int(0), int(2)).unwrap();
+    assert_eq!(a, array(vec![int(2)]));
+}
+
+#[test]
+fn indexing_reports_the_collection_type_then_the_index_type_then_the_bounds() {
+    let error = int(1).get_index(&string("x")).unwrap_err();
+    assert_eq!(error, "Unsupported type for indexing: Integer");
+    let error = array(vec![]).get_index(&dec(0.0)).unwrap_err();
+    assert_eq!(error, "Array index must be an Integer, found Decimal");
+    let error = array(vec![int(1)]).set_index(&int(-1), int(0)).unwrap_err();
+    assert_eq!(error, "Array index out of bounds: -1 (length 1)");
+    let error = array(vec![int(1)]).get_index(&int(1)).unwrap_err();
+    assert_eq!(error, "Array index out of bounds: 1 (length 1)");
+}

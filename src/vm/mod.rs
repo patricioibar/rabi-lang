@@ -105,6 +105,35 @@ impl<W: Write> Vm<W> {
                 Operation::Less => self.binary(|a, b| a.less_than(&b).map(Value::Boolean))?,
                 Operation::LessEqual => self.binary(|a, b| a.less_equal_than(&b).map(Value::Boolean))?,
 
+                Operation::BuildArray(count) => {
+                    let start = self
+                        .stack
+                        .len()
+                        .checked_sub(count as usize)
+                        .ok_or("Stack underflow")?;
+                    let elements = self.stack.split_off(start);
+                    self.push(Value::array(elements));
+                }
+
+                Operation::GetIndex => {
+                    let index = self.pop()?;
+                    let collection = self.pop()?;
+                    self.push(collection.get_index(&index)?);
+                }
+
+                Operation::SetIndex => {
+                    let value = self.pop()?;
+                    let index = self.pop()?;
+                    let collection = self.pop()?;
+                    collection.set_index(&index, value.clone())?;
+                    self.push(value);
+                }
+
+                Operation::Len => {
+                    let value = self.pop()?;
+                    self.push(value.len()?);
+                }
+
                 Operation::DefineGlobal(i) => {
                     let name = self.constant_name(i)?;
                     let value = self.pop()?;
