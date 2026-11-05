@@ -1,0 +1,15 @@
+func main():
+    let segundos = 0
+    let perimetro = 0.0
+    let saldo = 100
+    let i = 0
+    while i < 1000000:
+        segundos = segundos + 60 * 60 * 24
+        perimetro = perimetro + 2 * 3.14159 * 0.5
+        saldo = saldo + -1
+        i = i + 1
+    print segundos
+    print perimetro
+    print saldo
+
+main()

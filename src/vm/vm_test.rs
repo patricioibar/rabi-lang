@@ -3,7 +3,7 @@ use std::rc::Rc;
 use super::Vm;
 use crate::bytecode::{Function, Operation as Op, Value};
 use crate::compiler::{Chunk, compile};
-use crate::{parser, scanner};
+use crate::{optimizer, parser, scanner};
 
 /// Runs hand-assembled bytecode as the top-level script.
 fn execute(constants: Vec<Value>, code: Vec<Op>) -> Result<String, String> {
@@ -29,7 +29,7 @@ fn run_keeping_output(source: &str) -> (String, Result<(), String>) {
     let result = (|| {
         let tokens = scanner::scan(source.as_bytes())?;
         let statements = parser::parse(tokens)?;
-        let function = compile(statements)?;
+        let function = compile(optimizer::optimize(statements))?;
         Vm::with_output(&mut output).run(function)
     })();
     let output = String::from_utf8(output).expect("output should be valid UTF-8");

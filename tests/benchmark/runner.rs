@@ -1,5 +1,6 @@
 //! Mide el mismo programa implementado en `rabi`, Python y Rust, y desglosa
-//! el tiempo de `rabi` por fase: scanning, parsing, compilación y ejecución.
+//! el tiempo de `rabi` por fase: scanning, parsing, optimización, compilación y
+//! ejecución.
 //!
 //! No es un test: no verifica nada, solamente imprime los tiempos por pantalla.
 //! Se corre con `cargo bench`, y queda fuera de `cargo test`.
@@ -11,7 +12,7 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 use std::{env, fs, io, process};
 
-use rabi::{compiler, interpreter::Interpreter, parser, scanner, vm::Vm};
+use rabi::{compiler, interpreter::Interpreter, optimizer, parser, scanner, vm::Vm};
 
 const RUNS: usize = 3;
 
@@ -61,9 +62,10 @@ fn main() {
     let _ = fs::remove_dir_all(&out_dir);
 }
 
-const PHASES: [&str; 5] = [
+const PHASES: [&str; 6] = [
     "scanning",
     "parsing",
+    "optimización",
     "compilación",
     "ejecución vm",
     "ejecución intérprete",
@@ -103,6 +105,10 @@ fn time_phases(source: &[u8]) -> Result<[Duration; PHASES.len()], String> {
     let for_interpreter = statements.clone();
 
     let start = Instant::now();
+    let statements = optimizer::optimize(statements);
+    let optimizing = start.elapsed();
+
+    let start = Instant::now();
     let script = compiler::compile(statements)?;
     let compiling = start.elapsed();
 
@@ -114,7 +120,7 @@ fn time_phases(source: &[u8]) -> Result<[Duration; PHASES.len()], String> {
     Interpreter::with_output(io::sink()).run(&for_interpreter)?;
     let interpreter = start.elapsed();
 
-    Ok([scanning, parsing, compiling, vm, interpreter])
+    Ok([scanning, parsing, optimizing, compiling, vm, interpreter])
 }
 
 fn millis(duration: Duration) -> f64 {

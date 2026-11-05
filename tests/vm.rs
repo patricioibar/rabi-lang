@@ -2,7 +2,7 @@ mod common;
 
 use std::path::Path;
 
-use rabi::{compiler, interpreter::Interpreter, vm::Vm};
+use rabi::{compiler, interpreter::Interpreter, optimizer, vm::Vm};
 
 #[test]
 fn test_integration_programs() {
@@ -30,6 +30,7 @@ fn run_program(path: &Path) -> (String, Result<(), String>) {
     let mut output = Vec::new();
 
     let result = common::parse_program(path)
+        .map(optimizer::optimize)
         .and_then(compiler::compile)
         .and_then(|function| Vm::with_output(&mut output).run(function));
 

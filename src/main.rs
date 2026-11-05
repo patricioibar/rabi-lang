@@ -5,7 +5,7 @@ use clap::{Parser, ValueEnum};
 use rabi::{
     compiler,
     interpreter::Interpreter,
-    parser,
+    optimizer, parser,
     scanner::{self, Scanner},
     statement::Statement,
     token::Token,
@@ -60,8 +60,8 @@ impl Runner {
         match self {
             Runner::Interpreter(interpreter) => interpreter.run(&statements),
             Runner::Vm(vm) => {
-                let script =
-                    compiler::compile(statements).map_err(|e| format!("Error compiling: {}", e))?;
+                let script = compiler::compile(optimizer::optimize(statements))
+                    .map_err(|e| format!("Error compiling: {}", e))?;
                 vm.run(script)
             }
         }
