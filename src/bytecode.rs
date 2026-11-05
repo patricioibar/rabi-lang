@@ -6,6 +6,7 @@ pub enum Operation {
     Return,
     Print,
     Len,
+    Input,
     Pop,
     Negate,
     Add,

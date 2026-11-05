@@ -720,3 +720,31 @@ fn an_unclosed_call_at_end_of_input_is_an_error() {
 fn an_unclosed_call_with_arguments_is_an_error() {
     assert_eq!(error("f(1, 2"), "Expected ')' after function arguments");
 }
+
+#[test]
+fn input_takes_only_a_unary_operand() {
+    // `input p + 1` is `(input p) + 1`, like `len`.
+    assert_eq!(
+        parse("input p + 1"),
+        binary(
+            Expression::Input {
+                prompt: Box::new(var("p"))
+            },
+            Token::Plus,
+            int(1)
+        )
+    );
+}
+
+#[test]
+fn input_without_a_prompt_is_input_with_an_empty_prompt() {
+    let empty = Expression::Input {
+        prompt: Box::new(Expression::Literal {
+            value: Token::StringLiteral(String::new()),
+        }),
+    };
+    assert_eq!(parse("input"), empty);
+    assert_eq!(parse("input"), parse("input \"\""));
+    // a token that can't start an operand ends the `input`
+    assert_eq!(parse("input + 1"), binary(empty, Token::Plus, int(1)));
+}

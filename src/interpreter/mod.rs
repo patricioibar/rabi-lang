@@ -7,6 +7,8 @@ mod value_test;
 
 use std::io::{Stdout, Write};
 
+use crate::input::Input;
+
 use crate::statement::Statement;
 
 pub struct Interpreter<W: Write = Stdout> {
@@ -27,8 +29,12 @@ impl Interpreter<Stdout> {
 
 impl<W: Write> Interpreter<W> {
     pub fn with_output(output: W) -> Self {
+        Self::with_io(output, Box::new(std::io::stdin()))
+    }
+
+    pub fn with_io(output: W, input: Box<dyn Input>) -> Self {
         Interpreter {
-            runtime: runtime::Runtime::new(output),
+            runtime: runtime::Runtime::new(output, input),
         }
     }
 

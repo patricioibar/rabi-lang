@@ -770,3 +770,11 @@ fn return_outside_a_function_is_a_compile_error() {
     let error = compile_error("while true: return\n");
     assert!(error.contains("Return statement not allowed"), "{error}");
 }
+
+#[test]
+fn input_compiles_its_prompt_then_the_input_operation() {
+    assert_eq!(
+        code("print input null\n"),
+        vec![Op::Null, Op::Input, Op::Print, Op::Null, Op::Return]
+    );
+}

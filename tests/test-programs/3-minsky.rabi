@@ -43,8 +43,8 @@ func minsky_even(n):
 
     return r0
 
-func assert(input, expected):
-    if (input != expected):
+func assert(actual, expected):
+    if (actual != expected):
         print "ERROR"
     else:
         print "OK"

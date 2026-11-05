@@ -67,7 +67,8 @@ term           = factor , { ( "+" | "-" ) , factor } ;
 
 factor         = unary , { ( "*" | "/" | "%" ) , unary } ;
 
-unary          = ( "!" | "-" | "len" ) , unary
+unary          = ( "!" | "-" | "len" | "input" ) , unary
+               | "input"
                | call_or_index ;
 
 call_or_index  = primary , { "(" , [ expr_list ] , ")"
@@ -120,7 +121,7 @@ Un identificador comienza con una letra o `_`, y sigue con letras, dígitos o `_
 
 Las palabras reservadas son: `and`, `or`, `true`, `false`, `null`, `if`, `else`, `while`, `for`, `in`, `break`, `continue`, `func`, `return` y `let`.
 
-`print` y `len` no son palabras reservadas: se escanean como identificadores, y el parser les da un significado especial.
+`print`, `len` e `input` no son palabras reservadas: se escanean como identificadores, y el parser les da un significado especial.
 
 ### Literales
 
@@ -157,7 +158,7 @@ De mayor a menor precedencia:
 | Nivel | Operadores | Asociatividad | Ejemplo |
 |-------|------------|---------------|---------|
 | 1 | llamada `f(...)`, índice `a[i]` | izquierda | `f(1)[0]` → `(f(1))[0]` |
-| 2 | `!` `-` `len` (unarios) | derecha | `-a * b` → `(-a) * b` |
+| 2 | `!` `-` `len` `input` (unarios) | derecha | `-a * b` → `(-a) * b` |
 | 3 | `*` `/` `%` | izquierda | `a / b * c` → `(a / b) * c` |
 | 4 | `+` `-` | izquierda | `a - b - c` → `(a - b) - c` |
 | 5 | `<` `<=` `>` `>=` | izquierda | `a + 1 < b` → `(a + 1) < b` |

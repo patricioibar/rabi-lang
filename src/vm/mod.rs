@@ -6,6 +6,7 @@ use std::{
 };
 
 use crate::bytecode::{Function, Operation, Value};
+use crate::input::{self, Input};
 
 #[cfg(test)]
 mod vm_test;
@@ -43,6 +44,7 @@ pub struct Vm<W: Write = Stdout> {
     frames: Vec<CallFrame>,
     globals: Globals,
     output: W,
+    input: Box<dyn Input>,
 }
 
 impl Default for Vm<Stdout> {
@@ -59,11 +61,16 @@ impl Vm<Stdout> {
 
 impl<W: Write> Vm<W> {
     pub fn with_output(output: W) -> Self {
+        Self::with_io(output, Box::new(std::io::stdin()))
+    }
+
+    pub fn with_io(output: W, input: Box<dyn Input>) -> Self {
         Vm {
             stack: Vec::new(),
             frames: Vec::new(),
             globals: Globals::default(),
             output,
+            input,
         }
     }
 
@@ -159,6 +166,12 @@ impl<W: Write> Vm<W> {
                 Operation::Len => {
                     let value = self.pop()?;
                     self.push(value.len()?);
+                }
+
+                Operation::Input => {
+                    let prompt = self.pop()?;
+                    let line = input::read_line(&mut self.output, self.input.as_mut(), &prompt)?;
+                    self.push(line.map_or(Value::Null, Value::string));
                 }
 
                 Operation::DefineGlobal(i) => {

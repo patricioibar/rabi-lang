@@ -1034,3 +1034,45 @@ fn an_error_inside_a_function_propagates_to_the_caller() {
     let error = run("func f(): return 1 / 0\nprint f()\n").unwrap_err();
     assert!(error.contains("Division by zero"), "{error}");
 }
+
+// ===================================================================== input
+
+fn run_with_input(source: &str, input: &str) -> Result<String, String> {
+    let tokens = scanner::scan(source.as_bytes())?;
+    let statements = parser::parse(tokens)?;
+    let function = compile(optimizer::optimize(statements))?;
+    let mut output = Vec::new();
+    let input = Box::new(std::io::Cursor::new(input.to_string()));
+    Vm::with_io(&mut output, input).run(function)?;
+    String::from_utf8(output).map_err(|e| format!("output was not valid UTF-8: {e}"))
+}
+
+#[test]
+fn input_writes_the_prompt_and_returns_the_line_without_its_terminator() {
+    assert_eq!(
+        run_with_input("let n = input \"name: \"\nprint \"hi \" + n\n", "Ana\r\nBob\n").unwrap(),
+        "name: hi Ana\n"
+    );
+}
+
+#[test]
+fn input_reads_consecutive_lines_inside_functions() {
+    assert_eq!(
+        run_with_input(
+            "func ask():\n    return input \"\"\nprint ask()\nprint ask()\n",
+            "a\nb"
+        )
+        .unwrap(),
+        "a\nb\n"
+    );
+}
+
+#[test]
+fn input_returns_null_at_end_of_input() {
+    assert_eq!(run_with_input("print input \"\"\n", "").unwrap(), "null\n");
+}
+
+#[test]
+fn input_without_a_prompt_writes_nothing_before_reading() {
+    assert_eq!(run_with_input("let a = input\nprint a\n", "x\n").unwrap(), "x\n");
+}

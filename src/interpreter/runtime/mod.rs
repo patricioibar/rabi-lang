@@ -6,6 +6,8 @@ mod runtime_test;
 
 use std::io::Write;
 
+use crate::input::Input;
+
 use super::scope::Scope;
 use super::value::Value;
 use crate::statement::Statement;
@@ -14,6 +16,7 @@ pub struct Runtime<W: Write> {
     global_scope: Scope,
     current_scope: Scope,
     output: W,
+    input: Box<dyn Input>,
 }
 
 const RETURN_OUTSIDE_FUNCTION: &str = "'return' outside of a function";
@@ -28,12 +31,13 @@ pub enum ControlFlow {
 }
 
 impl<W: Write> Runtime<W> {
-    pub(super) fn new(output: W) -> Self {
+    pub(super) fn new(output: W, input: Box<dyn Input>) -> Self {
         let global_scope = Scope::new(None);
         Runtime {
             current_scope: global_scope.clone(),
             global_scope,
             output,
+            input,
         }
     }
 

@@ -1,4 +1,4 @@
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufReader, Write};
 
 use clap::{Parser, ValueEnum};
 
@@ -82,8 +82,6 @@ fn main() -> Result<(), i32> {
 }
 
 fn inline_mode(mode: Mode, backend: Backend) -> Result<(), i32> {
-    let input = BufReader::new(std::io::stdin());
-    let mut lines = input.lines();
     let mut runner = Runner::new(backend);
     let mut scanner = Scanner::new();
     loop {
@@ -94,18 +92,22 @@ fn inline_mode(mode: Mode, backend: Backend) -> Result<(), i32> {
         };
         print!("{}", prompt);
         std::io::stdout().flush().map_err(|_| 1)?;
-        let Some(line) = lines.next().transpose().map_err(|e| {
+        // stdin is read one line at a time and not buffered, so the
+        // `input` operator can read the lines that follow
+        let mut line = String::new();
+        let read = std::io::stdin().read_line(&mut line).map_err(|e| {
             eprintln!("Error reading input: {}", e);
             2
-        })?
-        else {
+        })?;
+        if read == 0 {
             break;
-        };
+        }
+        let line = line.trim_end_matches(['\n', '\r']);
 
         // a blank line closes the block being typed
         let blank = line.trim().is_empty();
 
-        if let Err(e) = scanner.scan_one_line(&line) {
+        if let Err(e) = scanner.scan_one_line(line) {
             eprintln!("Error scanning line: {}", e);
             scanner.finish(); // drop what was typed so far
             continue;

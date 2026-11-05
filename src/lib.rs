@@ -1,6 +1,7 @@
 pub mod bytecode;
 pub mod compiler;
 pub mod expression;
+pub mod input;
 pub mod interpreter;
 pub mod optimizer;
 pub mod parser;

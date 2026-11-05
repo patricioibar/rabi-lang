@@ -45,6 +45,7 @@ fn expression(value: &mut Expression) {
         Expression::Grouping { expression: inner }
         | Expression::Unary { operand: inner, .. }
         | Expression::Len { operand: inner }
+        | Expression::Input { prompt: inner }
         | Expression::Assignment { value: inner, .. } => expression(inner),
         Expression::Binary { left, right, .. }
         | Expression::Index { collection: left, index: right } => {

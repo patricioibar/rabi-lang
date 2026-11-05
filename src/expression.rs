@@ -30,6 +30,9 @@ pub enum Expression {
     Len {
         operand: Box<Expression>,
     },
+    Input {
+        prompt: Box<Expression>,
+    },
     Assignment {
         name: String,
         value: Box<Expression>,

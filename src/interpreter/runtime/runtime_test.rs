@@ -5,7 +5,7 @@ fn interpret(source: &str) -> Result<String, String> {
     let mut output = Vec::new();
     let tokens = scanner::scan(source.as_bytes())?;
     let statements = parser::parse(tokens)?;
-    Runtime::new(&mut output).run_plain(&statements)?;
+    Runtime::new(&mut output, Box::new(std::io::Cursor::new(""))).run_plain(&statements)?;
     String::from_utf8(output).map_err(|e| format!("output was not valid UTF-8: {e}"))
 }
 
@@ -686,9 +686,53 @@ fn an_index_assignment_evaluates_its_value_before_checking_the_bounds() {
     let mut output = Vec::new();
     let tokens = scanner::scan(source.as_bytes()).unwrap();
     let statements = parser::parse(tokens).unwrap();
-    let error = Runtime::new(&mut output)
+    let error = Runtime::new(&mut output, Box::new(std::io::Cursor::new("")))
         .run_plain(&statements)
         .unwrap_err();
     assert!(error.contains("out of bounds"), "{error}");
     assert_eq!(String::from_utf8(output).unwrap(), "touched\n");
+}
+
+// --------------------------------------------------------------------- input
+
+fn interpret_with_input(source: &str, input: &str) -> Result<String, String> {
+    let mut output = Vec::new();
+    let tokens = scanner::scan(source.as_bytes())?;
+    let statements = parser::parse(tokens)?;
+    let input = Box::new(std::io::Cursor::new(input.to_string()));
+    Runtime::new(&mut output, input).run_plain(&statements)?;
+    String::from_utf8(output).map_err(|e| format!("output was not valid UTF-8: {e}"))
+}
+
+#[test]
+fn input_writes_the_prompt_and_returns_the_line_without_its_terminator() {
+    assert_eq!(
+        interpret_with_input("let n = input \"name: \"\nprint \"hi \" + n\n", "Ana\r\nBob\n")
+            .unwrap(),
+        "name: hi Ana\n"
+    );
+}
+
+#[test]
+fn input_reads_consecutive_lines() {
+    assert_eq!(
+        interpret_with_input("print input \"\"\nprint input \"\"\n", "a\nb").unwrap(),
+        "a\nb\n"
+    );
+}
+
+#[test]
+fn input_returns_null_at_end_of_input() {
+    assert_eq!(
+        interpret_with_input("print input \"\"\nprint input \"\"\n", "").unwrap(),
+        "null\nnull\n"
+    );
+}
+
+#[test]
+fn input_without_a_prompt_writes_nothing_before_reading() {
+    assert_eq!(
+        interpret_with_input("let a = input\nprint a\n", "x\n").unwrap(),
+        "x\n"
+    );
 }

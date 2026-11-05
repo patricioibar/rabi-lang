@@ -200,6 +200,16 @@ func f(): return 1
 print f                      # -> <function f>
 ```
 
+### `input`
+
+`input` es un operador unario que lee una línea de la entrada estándar. Uso: `input [<prompt>]`. Devuelve la línea leída como un string, sin el salto de línea final (`\n` o `\r\n`). Si la entrada estándar ya terminó, devuelve `null`.
+
+```python
+let nombre = input "¿Cómo te llamás? "   # escribe el prompt y espera una línea
+print "hola " + nombre                   # -> hola Ana (si se ingresó "Ana")
+let linea = input                        # sin prompt, igual que input ""
+```
+
 ### Declaración con `let`
 
 La palabra reservada `let` declara una variable en el scope actual. La variable puede declararse inicializándola con un valor utilizando la sintaxis `let nombre = valor`, o sin inicializar, en cuyo caso su valor inicial será `null`. 

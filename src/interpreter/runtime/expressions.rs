@@ -21,6 +21,7 @@ impl<W: Write> Runtime<W> {
             Expression::ArrayLiteral { elements } => self.eval_array_literal(elements),
             Expression::Index { collection, index } => self.eval_index(collection, index),
             Expression::Len { operand } => self.eval_len(operand),
+            Expression::Input { prompt } => self.eval_input(prompt),
             Expression::Assignment { name, value } => self.assign_variable(name, value),
             Expression::IndexAssignment {
                 collection,
@@ -58,6 +59,12 @@ impl<W: Write> Runtime<W> {
 
     fn eval_len(&mut self, operand: &Expression) -> Result<Value, String> {
         self.evaluate_expression(operand)?.len()
+    }
+
+    fn eval_input(&mut self, prompt: &Expression) -> Result<Value, String> {
+        let prompt = self.evaluate_expression(prompt)?;
+        let line = crate::input::read_line(&mut self.output, self.input.as_mut(), &prompt)?;
+        Ok(line.map_or(Value::Null, Value::string))
     }
 
     fn eval_index(&mut self, collection: &Expression, index: &Expression) -> Result<Value, String> {

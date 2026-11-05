@@ -487,6 +487,10 @@ impl Compiler {
                 self.expression(*operand)?;
                 self.emit(Operation::Len);
             },
+            Expression::Input { prompt } => {
+                self.expression(*prompt)?;
+                self.emit(Operation::Input);
+            },
             Expression::IndexAssignment { collection, index, value } => {
                 self.expression(*collection)?;
                 self.expression(*index)?;

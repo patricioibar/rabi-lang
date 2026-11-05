@@ -142,7 +142,34 @@ fn unary(cursor: &mut Cursor) -> Result<Expression, String> {
         });
     }
 
+    if matches!(cursor.peek(), Some(Token::Identifier(name)) if name == "input") {
+        cursor.advance();
+        let prompt = if starts_operand(cursor.peek()) {
+            unary(cursor)?
+        } else {
+            Expression::Literal {
+                value: Token::StringLiteral(String::new()),
+            }
+        };
+        return Ok(Expression::Input {
+            prompt: Box::new(prompt),
+        });
+    }
+
     call_or_index(cursor)
+}
+
+fn starts_operand(token: Option<&Token>) -> bool {
+    matches!(
+        token,
+        Some(
+            Token::Identifier(_)
+                | Token::LeftParen
+                | Token::LeftBracket
+                | Token::Bang
+                | Token::Minus
+        )
+    ) || token.is_some_and(Token::is_literal)
 }
 
 fn call_or_index(cursor: &mut Cursor) -> Result<Expression, String> {
