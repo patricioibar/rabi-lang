@@ -34,7 +34,7 @@ Sin instalar el binario, se puede correr un programa desde la raíz del proyecto
 make run FILE=<archivo> [ ARGS="--backend vm" ]
 ```
 
-### Intérprete o compilador
+### Intérprete y compilador
 
 El parámetro `--backend` elige cómo se ejecuta el programa:
 
@@ -47,7 +47,11 @@ Los parámetros de `scanning` y `parsing` son mutuamente excluyentes. Si se prov
 
 ## Entrega parcial - Intérprete
 
-Leer [ENTREGA_PARCIAL.md](ENTREGA_PARCIAL.md) para más información sobre la entrega parcial del proyecto.
+Leer [ENTREGA_PARCIAL.md](docs/ENTREGA_PARCIAL.md) para más información sobre la entrega parcial del proyecto.
+
+## Entrega final -- Compilador a bytecode y VM
+
+Leer [ENTREGA_FINAL.md](docs/ENTREGA_FINAL.md) para más información sobre la entrega parcial del proyecto.
 
 ## Tests de integración
 Se encuentran tests de integración en el directorio `tests/`. Para ejecutarlos, se puede usar el siguiente comando:
