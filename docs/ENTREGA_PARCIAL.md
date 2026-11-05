@@ -1,4 +1,4 @@
-# Entrega Parcial TP Opción II - Lenguajes y Compiladores
+# Entrega Parcial TP Opción II - Lenguajes y Compiladores - 28/09/2026
 
 <center>
 
@@ -10,15 +10,21 @@
 
 En esta entrega parcial se implementa un intérprete para la primera versión del lenguaje de programación `rabi`. 
 
-Para detalles de cómo ejecutar el intérprete, ver [README.md](README.md).
+Para detalles de cómo ejecutar el intérprete, ver [README.md](../README.md).
 
 ## Índice
 
-1. [Introducción](#introducción)
-1. [Sintaxis, semántica y diferencias contra Lox](#sintaxis-semánticas-y-diferencias-contra-lox)
-1. [Detalles de implementación](#detalles-de-implementación)
-1. [Resultados de benchmarking](#resultados-de-benchmarking)
-1. [Trabajo Futuro](#trabajo-futuro)
+- [Entrega Parcial TP Opción II - Lenguajes y Compiladores - 28/09/2026](#entrega-parcial-tp-opción-ii---lenguajes-y-compiladores---28092026)
+  - [Índice](#índice)
+  - [Introducción](#introducción)
+  - [Sintaxis, semántica y diferencias contra Lox](#sintaxis-semántica-y-diferencias-contra-lox)
+    - [Otras características del lenguaje](#otras-características-del-lenguaje)
+  - [Detalles de implementación](#detalles-de-implementación)
+    - [Scanner - Análisis léxico](#scanner---análisis-léxico)
+    - [Parser - Análisis sintáctico](#parser---análisis-sintáctico)
+    - [Interpreter - Interpretación y ejecución](#interpreter---interpretación-y-ejecución)
+  - [Resultados de benchmarking](#resultados-de-benchmarking)
+  - [Trabajo Futuro](#trabajo-futuro)
  
 ## Introducción
 
