@@ -707,8 +707,11 @@ fn interpret_with_input(source: &str, input: &str) -> Result<String, String> {
 #[test]
 fn input_writes_the_prompt_and_returns_the_line_without_its_terminator() {
     assert_eq!(
-        interpret_with_input("let n = input \"name: \"\nprint \"hi \" + n\n", "Ana\r\nBob\n")
-            .unwrap(),
+        interpret_with_input(
+            "let n = input \"name: \"\nprint \"hi \" + n\n",
+            "Ana\r\nBob\n"
+        )
+        .unwrap(),
         "name: hi Ana\n"
     );
 }

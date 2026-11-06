@@ -1,4 +1,7 @@
-use std::{fmt::Display, io::{BufRead, BufReader, Cursor, Read, Result, Stdin, Write}};
+use std::{
+    fmt::Display,
+    io::{BufRead, BufReader, Cursor, Read, Result, Stdin, Write},
+};
 
 pub trait Input {
     fn read_line(&mut self, buf: &mut String) -> Result<usize>;

@@ -1050,7 +1050,11 @@ fn run_with_input(source: &str, input: &str) -> Result<String, String> {
 #[test]
 fn input_writes_the_prompt_and_returns_the_line_without_its_terminator() {
     assert_eq!(
-        run_with_input("let n = input \"name: \"\nprint \"hi \" + n\n", "Ana\r\nBob\n").unwrap(),
+        run_with_input(
+            "let n = input \"name: \"\nprint \"hi \" + n\n",
+            "Ana\r\nBob\n"
+        )
+        .unwrap(),
         "name: hi Ana\n"
     );
 }
@@ -1074,5 +1078,8 @@ fn input_returns_null_at_end_of_input() {
 
 #[test]
 fn input_without_a_prompt_writes_nothing_before_reading() {
-    assert_eq!(run_with_input("let a = input\nprint a\n", "x\n").unwrap(), "x\n");
+    assert_eq!(
+        run_with_input("let a = input\nprint a\n", "x\n").unwrap(),
+        "x\n"
+    );
 }
