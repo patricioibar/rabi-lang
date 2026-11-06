@@ -21,6 +21,10 @@ pub fn compile(statements: Vec<Statement>) -> Result<Function, String> {
     compiler.finish()
 }
 
+fn operand(value: usize, error: &str) -> Result<u16, String> {
+    u16::try_from(value).map_err(|_| error.to_string())
+}
+
 struct Local {
     name: String,
     depth: usize,
@@ -86,7 +90,10 @@ impl Compiler {
     }
 
     fn patch_jump(&mut self, index: usize) -> Result<(), String> {
-        let jump_offset = (self.chunk().code.len() - index - 1) as u16;
+        let jump_offset = operand(
+            self.chunk().code.len() - index - 1,
+            "Too much code to jump over",
+        )?;
         let op = match self.chunk().code[index] {
             Operation::Jump(_) => Operation::Jump(jump_offset),
             Operation::JumpIfFalse(_) => Operation::JumpIfFalse(jump_offset),
@@ -98,8 +105,11 @@ impl Compiler {
     }
 
     fn emit_loop(&mut self, loop_start: usize) -> Result<(), String> {
-        let offset = self.chunk().code.len() - loop_start + 1;
-        self.emit(Operation::Loop(offset as u16));
+        let offset = operand(
+            self.chunk().code.len() - loop_start + 1,
+            "Loop body too large",
+        )?;
+        self.emit(Operation::Loop(offset));
         Ok(())
     }
 
@@ -141,6 +151,7 @@ impl Compiler {
             let index = self.identifier_constant(name)?;
             self.emit(Operation::DefineGlobal(index));
         } else {
+            operand(self.locals.len(), "Too many local variables in function")?;
             let depth = self.scope_depth;
             self.locals.push(Local { name, depth });
         }
@@ -465,14 +476,14 @@ impl Compiler {
             },
             Expression::Call { function, arguments } => {
                 self.expression(*function)?;
-                let arg_count = arguments.len() as u16;
+                let arg_count = operand(arguments.len(), "Too many arguments in call")?;
                 for arg in arguments {
                     self.expression(arg)?;
                 }
                 self.emit(Operation::Call(arg_count));
             },
             Expression::ArrayLiteral { elements } => {
-                let count = elements.len() as u16;
+                let count = operand(elements.len(), "Too many elements in array literal")?;
                 for element in elements {
                     self.expression(element)?;
                 }
