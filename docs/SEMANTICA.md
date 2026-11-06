@@ -60,6 +60,8 @@ Se permite el uso de comentarios, que comienzan con `#` y se extienden hasta el 
 
 Los bloques de código utilizados en condicionales, bucles y funciones se delimitan mediante indentación. Un nivel de indentación puede realizarse utilizando una tabulación (`\t`) o cuatro espacios. **No** se pueden mezclar tabulaciones y espacios en una misma línea. Aunque está permitido mezclar entre diferentes líneas, se recomienda mantener la consistencia en el uso de indentación a lo largo del programa. 
 
+El lenguaje no define un tamaño máximo para los bloques de condicionales y bucles. Ese límite depende de la implementación.
+
 ```python
 let x = 5
 if x > 0:
@@ -362,10 +364,11 @@ else:
 
 Los operadores lógicos `and` y `or` se evalúan de izquierda a derecha y utilizan cortocircuito, es decir, no evalúan el segundo operando si el resultado ya puede determinarse con el primero. 
 
-Estos operadores pueden utilizarse con cualquier tipo de valor, y siguen las reglas de veracidad descritas en la sección de [tipos de datos](#verdadero-y-falso). El operador `and` devuelve un valor booleano, mientras que el operador `or` devuelve el primer operando que sea "truthy" o `false` operando si todos son "falsy".
+Estos operadores pueden utilizarse con cualquier tipo de valor, y siguen las reglas de veracidad descritas en la sección de [tipos de datos](#verdadero-y-falso). El operador `and` devuelve un valor booleano, mientras que el operador `or` devuelve el primer operando que sea "truthy", o el último operando si todos son "falsy".
 
 ```python
 print null or "por defecto"   # -> por defecto
+print false or null           # -> null   (ninguno es truthy, devuelve el último)
 print 5 or no_existe          # -> 5      (no evalúa el derecho)
 print 0 and no_existe         # -> false
 print 1 and 5                 # -> true   (and siempre devuelve un Boolean)
@@ -465,7 +468,7 @@ print saludar()
 
 ### Recursión
 
-Las funciones declaradas en el scope global pueden llamarse a sí mismas y entre ellas (recursión mutua). Una función anidada no puede llamarse a sí misma (ver [rabi no tiene closures](#rabi-no-tiene-closures)).
+Las funciones declaradas en el scope global pueden llamarse a sí mismas y entre ellas (recursión mutua). Una función anidada no puede llamarse a sí misma (ver [rabi no tiene closures](#rabi-no-tiene-closures)). El lenguaje no define una profundidad máxima de recursión. Ese límite depende de la implementación.
 
 ```python
 func es_par(n):
