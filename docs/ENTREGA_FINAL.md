@@ -16,6 +16,9 @@
   - [Compilador de bytecode](#compilador-de-bytecode)
     - [Detalles de implementación](#detalles-de-implementación)
       - [Bytecode como Enum de Rust](#bytecode-como-enum-de-rust)
+      - [Cortocircuito y operaciones compuestas](#cortocircuito-y-operaciones-compuestas)
+      - [`break` y `continue`](#break-y-continue)
+      - [Valores compartidos entre intérprete y VM](#valores-compartidos-entre-intérprete-y-vm)
     - [Resultados de benchmarking](#resultados-de-benchmarking)
   - [Optimizaciones](#optimizaciones)
   - [Feature `input`](#feature-input)
@@ -57,11 +60,39 @@ Sin embargo, realicé un pequeño POC utilizando herramientas de inteligencia ar
 A continuación algunas ventajas y desventajas que encontré al usar el Enum durante la implementación:
 
 **Ventajas**
-- El compilador emite `Operation::GetLocal(i)` en lugar de escribir el opcode y después los bytes del operando por separado. Esto facilitó tanto el emitir el código en el compilador como el ejecutarlo en la VM.
+- El compilador emite la operación junto con el operando (e.g. `Operation::GetLocal(i)`) en lugar de escribir el opcode y después los bytes del operando por separado. Esto facilitó tanto el emitir el código en el compilador como el ejecutarlo en la VM.
 - Agregar una instrucción nueva es agregar una variante al Enum. Al hacer eso el compilador de Rust avisa en qué `match` falta manejarla, lo cual facilita mucho la adición de nuevo código (por ejemplo, una feature nueva como [`input`](#feature-input)).
 
 **Desventajas**
 - Al usar un Enum, todas las operaciones necesariamente son del mismo tamaño. Esto fue un factor a tener en cuenta al crear las operaciones del bytecode, ya que si en alguna operación utilizaba operandos de diferente tamaño, o diferente cantidad de operandos, afectaría el tamaño de todas las demás operaciones por más que sigan igual. Es por esto que todas las operaciones tienen como máximo un operando de 2 bytes. Así, cada operación ocupa 4 bytes (corroborado utilizando `size_of::<Operation>()`).
+
+#### Valores compartidos entre intérprete y VM
+El intérprete y la VM usan el mismo Enum `Value` para representar los valores del lenguaje. La única diferencia entre ambos es la representación de las funciones: en el intérprete una función guarda el AST de su cuerpo, y en la VM guarda su bytecode. Por eso `Value` es genérico sobre el tipo de función (`Value<F>`), y cada backend usa su propia versión.
+
+De esta forma la aritmética, las comparaciones y las reglas de veracidad se implementan una sola vez, y los dos backends se comportan igual sin tener que mantener dos implementaciones en paralelo.
+
+Esto tiene una contraparte en performance, la cual se comenta en [OPTIMIZACIONES.md](OPTIMIZACIONES.md#5-atajo-para-la-aritmética).
+
+#### Operaciones compuestas y cortocircuito
+El cortocircuito de `and` y `or` se implementa con saltos: se evalúa el operando izquierdo y, según su valor de verdad, se saltea el código del operando derecho sin evaluarlo.
+
+Los dos operadores no devuelven lo mismo: `and` siempre devuelve un booleano, mientras que `or` devuelve el operando que decidió el resultado (más detalle en [SEMANTICA.md](SEMANTICA.md#operadores-lógicos-y-cortocircuito)). Un truco interesante que usé para que `and` devuelva un booleano, es que para lograrlo el compilador emite dos `Not` seguidos al final (como hacer `!!x`) que termina convirtiendo el resultado, cualquiera sea su tipo, en su equivalente booleano.
+
+El hecho de convertir un valor a su equivalente booleano según si es *thruthy*, no es el único caso en que una operación del lenguaje se compila como dos instrucciones:
+- No existe `JumpIfTrue`, así que `or` se compila con un `JumpIfFalse` seguido de un `Jump`: si el operando izquierdo es falsy se salta a evaluar el derecho, y si no, el `Jump` lo saltea.
+- No existe `NotEqual`, así que `a != b` se compila como `Equal` seguido de `Not`.
+
+Esto lo hice con la intención de mantener chico el set de instrucciones, lo que simplifica tanto el compilador como la VM, pero en contraparte hace que se tenga que ejecutar una instrucción de más en cada caso. Si se desease optimizar aún más la VM, podrían agregarse varias instrucciones combinadas que hagan el efecto de ejecutar varias juntas.
+
+Otro factor interesante a mencionar es que como los saltos guardan la distancia en su operando de 2 bytes, un salto puede cubrir como máximo 65535 instrucciones. Esto limita el tamaño de los bloques de condicionales y bucles, aunque es difícil alcanzarlo en un programa real. En [SEMANTICA.md](SEMANTICA.md#bloques-e-indentación) se aclaré que el lenguaje deja abierto a la implementación el tamaño máximo de bloque.
+
+#### `break` y `continue`
+Un caso que me costó un poco implementar, sobre todo porque no había ejemplo en la implementación de la cátedra, fue el caso de `break` y `continue`. 
+
+Para compilarlos el compilador lleva una pila con los bucles en los que s se encuentra (`for row in rows: for col in row: ...` tendrá una pila de 2 elementos), cada uno con una referencia al número de instrucción inicial, la  profundidad de scope, y una lista de los `break` emitidos.<br>
+`continue` se compila como un salto con destino al inicio del bucle más interno.<br>
+`break`, en cambio, salta al final del bucle, que todavía no se conoce cuando se emite el `break`, por lo que el salto se emite con un destino provisorio y se corrige al terminar de compilar el bucle. <br>
+En ambos casos, antes de saltar se descartan de la pila las variables locales declaradas dentro del bucle.
 
 ### Resultados de benchmarking
 
