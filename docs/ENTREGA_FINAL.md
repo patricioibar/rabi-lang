@@ -109,11 +109,7 @@ Las mediciones se tomaron en la misma notebook que en la entrega parcial (Intel 
 
 El benchmark también desglosa el tiempo de `rabi` por fase (no incluido en la tabla). El scanning, el parsing, la optimización y la compilación juntos tardan menos de 0,1 ms, así que prácticamente todo el tiempo se va en la ejecución.
 
-Luego de las [optimizaciones](#optimizaciones), la VM resultó aproximadamente 2,15 veces más rápida que el intérprete. 
-
-<!-- mejorar y quizas reubicar esta conclusión en la sección de conclusiones
-
-Sin embargo, antes de las optimizaciones la VM era considerablemente más lenta que el intérprete. Es decir, en este caso la mejoría de performance no vino ligada al cambio de método de implementación (intérprete/VM) sino a la aplicación de optimizaciones. Esto tiene sentido ya que al final del día ambos son programas escritos en el mismo lenguaje de programación, que hacían prácticamente lo mismo de dos maneras diferentes. En mi opinión, la ventaja de implementar un bytecode compiler no viene tanto de la mano de buscar una mejora inmediata en la performance del lenguaje, sino facilitar su porteo a otras arquitecturas y permitir optimización también "portable" en ese sentido -->
+Luego de las [optimizaciones](#optimizaciones), la VM resultó aproximadamente 2,15 veces más rápida que el intérprete. Sin embargo, antes de optimizarla era más lenta (ver [Conclusión](#conclusión)).
 
 Comparada con CPython, la VM de `rabi` es aproximadamente 1,3 veces más lenta. Al ser las dos implementaciones de VMs de bytecode de diferentes lenguajes, esta comparación es mucho más significativa ahora que en la entrega parcial. Creo que hay dos cosas que notar que diferencian las dos implementaciones: 
 1. Python es un lenguaje mucho más antiguo, optimizado, y trabajado que rabi. Se podrían seguir aplicando muchas optimizaciones y mejoras tanto al compilador como a la VM de rabi para mejorar su performance y, en mi opinión, podría ser más rápida que la de Python con relativamente poco esfuerzo (por ejemplo, implementando un resolver).
@@ -133,6 +129,32 @@ La estrategia seguida y más detalle de las optimizaciones realizadas se encuent
 Agregué una nueva expresión para obtener input de parte del usuario. La razón principal fue el hacer un programa interactivo para el caso de uso.
 
 ## Caso de uso
+Como caso de uso del lenguaje implementé un muy pequeño juego, un ta-te-ti por consola para dos jugadores. El programa se encuentra en [`example/tateti.rabi`](../example/tateti.rabi), y las instrucciones para correrlo y jugar en el [README del ejemplo](../example/README.md).
+
+El juego dibuja el tablero, pide a cada jugador la casilla en la que quiere jugar (con `input`), valida la jugada, y detecta cuándo alguien gana o hay empate. Al terminar cada partida se muestra un marcador y se pregunta si se quiere jugar otra.
+
+```
+  X | 2 | O
+ ---+---+---
+  4 | X | 6
+ ---+---+---
+  O | 8 | 9
+
+Turno de X. Elegí una casilla (1-9):
+```
+
+rabi es un lenguaje muy pequeño y con bastantes pocas features, por eso no creo que tiene mucho sentido buscarle un caso de uso productivo para la realidad. El mejor caso de uso que se me ocurrió es que puede utilizarse con fines didácticos (aprender a programar).
+
+Elegí hacer un juego interactivo porque me pareció que podría ser un buen primer programa "completo" que un alumno podría realizar, y porque usa casi todo el lenguaje: funciones, arrays, bucles `for` y `while`, condicionales y variables globales.
 
 ## Conclusión
+Uno de los resultados que más me llamó la atención del trabajo fue que, al terminar la VM resultó ser 1,44 veces **más lenta** que el intérprete. Recién después de aplicar las optimizaciones pasó a ser unas 2 veces más rápida. A priori parecería que la mejora de performance no vino del cambio de método de implementación (intérprete a VM) sino de la aplicación de optimizaciones. Para mí esto tenía sentido, ya que al final del día ambos son programas escritos en el mismo lenguaje, que hacen prácticamente lo mismo de dos maneras diferentes. 
+
+Sin embargo, también hay que tener en cuenta que esas "optimizaciones" fueron en su mayoría más bien correcciones de ineficiencias en la implementación (copiadoo de variables de forma innecesaria, cambiar a una función de hash más rápida). Por lo tanto, creo que se podría decir que la VM sí supone una ventaja en eficiencia sobre el intérprete, pero hay que implementar una buena VM para que realmente haya diferencia. 
+
+Luego, al investigar un poco más sobre el tema en internet y en el libro de la cátedra, descubrí que en efecto es así: <br>
+Por un lado, al representar el código de una forma más compacta y plana, que se recorre secuencialmente en lugar de recursivamente, se pueden aprovechar mejor las funciones optimizadas del CPU, como las diferentes tiers de caché (aunque obviamente nunca tanto como si estuviera compilado a código de máquina). <br>
+También se abre ventana a muchas más optimizaciones que serían más difíciles de aplicar en un AST, como la utilización de instrucciones combinadas, o incluso la traducción directa a código de máquina usando estrategias como un Just In Time compiler.
+
+Por último, como mencioné en la sección del caso de uso, `rabi` sigue siendo un lenguaje muy pequeño y con pocas features, y no creo que tenga sentido buscarle un uso productivo. Lo que sí me parece valioso es su uso didáctico: tiene una sintaxis simple, parecida a Python, una semántica completamente documentada y sin casos raros (por ejemplo, la ausencia de closures hace que lo que ve una función dependa solamente de sus parámetros, sus variables locales y las globales), y alcanza para escribir programas pequeños. Creo que podría ser un buen lenguaje para alguien que está aprendiendo a programar.
  
