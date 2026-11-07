@@ -1,0 +1,117 @@
+# rabi no tiene conversión de string a número, así que las casillas se
+# identifican comparando la entrada contra estos textos
+let DIGITOS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
+# Las 8 líneas ganadoras: 3 filas, 3 columnas y 2 diagonales.
+let FILAS = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+let COLUMNAS = [[0, 3, 6], [1, 4, 7], [2, 5, 8]]
+let DIAGONALES = [[0, 4, 8], [2, 4, 6]]
+let LINEAS_GANADORAS = FILAS + COLUMNAS + DIAGONALES
+
+let victorias_x = 0
+let victorias_o = 0
+let empates = 0
+let salir = false
+
+func a_texto(n):
+    if n < 10: return DIGITOS[n]
+    return a_texto(n / 10) + DIGITOS[n % 10]
+
+func tablero_nuevo():
+    return ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
+func esta_libre(tablero, i):
+    return tablero[i] != "X" and tablero[i] != "O"
+
+func dibujar_fila(tablero, i):
+    print "  " + tablero[i] + " | " + tablero[i + 1] + " | " + tablero[i + 2]
+
+func dibujar(tablero):
+    print ""
+    dibujar_fila(tablero, 0)
+    print " ---+---+---"
+    dibujar_fila(tablero, 3)
+    print " ---+---+---"
+    dibujar_fila(tablero, 6)
+    print ""
+
+func posicion(texto):
+    let i = 1
+    while i <= 9:
+        if texto == DIGITOS[i]: return i - 1
+        i = i + 1
+    return -1
+
+# Devuelve "X"/"O" si alguien completó una línea, o null si no.
+func ganador(tablero):
+    for linea in LINEAS_GANADORAS:
+        let a = tablero[linea[0]]
+        if a == tablero[linea[1]] and a == tablero[linea[2]]: return a
+    return null
+
+func pedir_jugada(tablero, jugador):
+    while true:
+        let entrada = input ("Turno de " + jugador + ". Elegí una casilla (1-9): ")
+        if entrada == null: return -1
+        let i = posicion(entrada)
+        if i == -1:
+            print "Entrada inválida: escribí un número del 1 al 9."
+        else if !esta_libre(tablero, i):
+            print "La casilla " + entrada + " ya está ocupada."
+        else:
+            return i
+
+func jugar_partida(empieza):
+    let tablero = tablero_nuevo()
+    let jugador = empieza
+    let turnos = 0
+    while turnos < 9:
+        dibujar(tablero)
+        let i = pedir_jugada(tablero, jugador)
+        if i == -1: return null
+        tablero[i] = jugador
+        turnos = turnos + 1
+        if ganador(tablero) != null:
+            dibujar(tablero)
+            print "¡Ganó " + jugador + "!"
+            return jugador
+        if jugador == "X": jugador = "O" else: jugador = "X"
+    dibujar(tablero)
+    print "¡Empate!"
+    return "empate"
+
+func mostrar_marcador():
+    print ""
+    print "=== Marcador ==="
+    print "X: " + a_texto(victorias_x) + "  |  O: " + a_texto(victorias_o) + "  |  Empates: " + a_texto(empates)
+    print ""
+
+func quiere_seguir():
+    while true:
+        let r = input "¿Jugar otra partida? (s/n): "
+        if r == null or r == "n" or r == "N": return false
+        if r == "s" or r == "S" or r == "": return true
+        print "Respondé 's' o 'n'."
+
+print "=============================="
+print "           TA-TE-TI"
+print "=============================="
+print "Dos jugadores: X y O se turnan."
+print "Elegí una casilla con su número."
+
+let empieza = "X"
+while !salir:
+    let resultado = jugar_partida(empieza)
+    if resultado == null:
+        salir = true
+    else:
+        if resultado == "X": victorias_x = victorias_x + 1
+        else if resultado == "O": victorias_o = victorias_o + 1
+        else: empates = empates + 1
+        mostrar_marcador()
+        if !quiere_seguir(): salir = true
+        # En la siguiente partida empieza el otro jugador.
+        if empieza == "X": empieza = "O" else: empieza = "X"
+
+print ""
+print "¡Gracias por jugar!"
