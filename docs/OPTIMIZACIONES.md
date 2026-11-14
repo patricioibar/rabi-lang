@@ -4,7 +4,9 @@ Cuando la VM empezó a funcionar, era 1,44 veces **más lenta** que el intérpre
 
 Antes de ponerme a optimizar, medí dónde había más cuello de botella usando `perf` sobre el benchmark, un bucle de un millón de vueltas que usa solo variables globales. También usé una versión del mismo programa con variables locales. Los scripts de perfilado están en [perfilado/](../perfilado/).
 
-Encontré los siguientes resultados:
+Traté de seguir el método que vimos en clase: primero medir, para tener una base contra la cual comparar, después perfilar para saber qué línea partes consumen más tiempo, y luego aplicar la optimización donde corresponda para finalmente volver a medir y confirmar si el cambio mejoró la performance y cuánto la mejoró. En las siguientes secciones se explican las optimizaciones en el órden en que fueron aplicadas, de mayor a menor impacto según el perfil. En todos los casos la optimización tiene que dejar el comportamiento intacto, que es lo que verifican los tests de integración corriendo cada programa en la VM y en el intérprete y comparando las salidas.
+
+Tras el perfilado obtuve los siguientes resultados:
 
 - La mayor parte del tiempo de ejecución estaba en acceder a las variables globales: cada acceso copiaba el nombre de la variable a un `String` nuevo y lo buscaba en un `HashMap` usando un hash por defecto de Rust. Aun sin esas copias, la búsqueda en el `HashMap` seguía siendo casi la mitad del tiempo.
 - Otra parte importante se iba en copiar valores a la pila (`GetConstant` ~15 %, `GetLocal` y `SetLocal` ~30 % con locales).
@@ -60,6 +62,8 @@ Después de aplicar todas las optimizaciones, la VM terminó siendo alrededor de
 
 Finalmente, decidí implementar la optimización **Constant Folding** sobre el código generado. Decidí implementarla para probar cómo se realizaría la optimización más que por el rendimiento en sí.
 
-Implementé **Constant Folding** agregando una etapa adicional entre el parser y el compilador, a la cual decidí llamar [optimizer](../src/optimizer/mod.rs). `optimizer` recorre el AST y reemplaza por un literal cada operación entre literales (por ejemplo, `60 * 60 * 24` se compila como `86400`). El resultado se calcula con los mismos métodos de `Value` que usa la VM. Si una operación fallaría, como `1 / 0`, se deja sin plegar para que el error ocurra al ejecutar.
+Implementé **Constant Folding** agregando una etapa adicional entre el parser y el compilador, a la cual decidí llamar [optimizer](../src/optimizer/mod.rs). `optimizer` recorre el AST y reemplaza por un literal cada operación entre literales (por ejemplo, `60 * 60 * 24` se compila como `86400`). El resultado se calcula con los mismos métodos de `Value` que usa la VM.
+
+Un detalle interesante es que el valor calculado en tiempo de compilación tiene que ser igual al que se habría calculado en tiempo de ejecución, incluyendo el caso en que la operación no da un valor sino un error. Por esta razón no se pliegan las operaciones que fallarían, por ejemplo, si plegara `1 / 0` la división por cero daría un error de compilación en lugar del error en ejecución que se daría sin la optimización, y el programa dejaría de comportarse como el original.
 
 El benchmark no tiene expresiones constantes, así que su tiempo no cambió (277 ms contra 280 ms, dentro del ruido). En un bucle con expresiones constantes ([perfilado/benchmark-constantes.rabi](../perfilado/benchmark-constantes.rabi)), el tiempo bajó de 130 a 87 ms (−33 %).

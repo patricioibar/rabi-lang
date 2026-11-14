@@ -35,6 +35,8 @@ En esta entrega final se trabajó diferentes aspectos del trabajo practico, entr
 - Una nueva feature `input` para leer texto ingresado por el usuario
 - Un caso de uso del lenguaje de programación
 
+Con el compilador de bytecode, `rabi` pasó a tener **dos implementaciones del mismo lenguaje**: el intérprete de AST de la entrega parcial y la máquina virtual de esta entrega. Las dos comparten el scanner y el parser, y las dos responden a la misma especificación ([SEMANTICA.md](SEMANTICA.md)). Al ser ambos implementaciones del mismo lenguaje, un mismo programa debería tener el mismo comportamiento sea cual sea la implementación que lo ejecuta. Los tests de integración de la VM ([tests/vm.rs](../tests/vm.rs)) corren cada programa de prueba en los dos backends y exigen que la VM imprima exactamente lo mismo que el intérprete.
+
 ## Documentación
 Se agregó documentación completa de la gramática y semántica del lenguaje de programación. La misma se encuentra en dos archivos:
 
