@@ -2,7 +2,7 @@
 
 ## Índice
 
-1. [EBNF de la gramática sintáctica](#1-ebnf-de-la-gramática-sintáctica)
+1. [EBNF de la gramática sintáctica](#ebnf-de-la-gramática-sintáctica)
 2. [Estructura léxica](#estructura-léxica)
 3. [Sintaxis](#sintaxis)
 

@@ -497,7 +497,7 @@ print externa()     # -> 42
 print interna()     # -> error: Variable 'interna' not defined
 ```
 
-### Scopes y closures
+## 8. Scopes y closures
 
 Dentro de una función solo son visibles sus parámetros, las variables declaradas dentro de ella y las variables globales.
 

@@ -70,7 +70,7 @@ Leer [ENTREGA_PARCIAL.md](docs/ENTREGA_PARCIAL.md) para más información sobre 
 
 ## Entrega final -- Compilador a bytecode y VM
 
-Leer [ENTREGA_FINAL.md](docs/ENTREGA_FINAL.md) para más información sobre la entrega parcial del proyecto.
+Leer [ENTREGA_FINAL.md](docs/ENTREGA_FINAL.md) para más información sobre la entrega final del proyecto.
 
 ## Tests de integración
 Se encuentran tests de integración en el directorio `tests/`. Para ejecutarlos, se puede usar el siguiente comando:
@@ -79,7 +79,7 @@ Se encuentran tests de integración en el directorio `tests/`. Para ejecutarlos,
 make test
 ```
 
-Los tests corren los programas encontrados en `tests/test-programs/`, los cuales son equivalentes a los provistos por la cátedra, adaptados para el lenguaje `rabi`. Cada programa se ejecuta con los dos backends: `tests/interpreter.rs` usa el intérprete y `tests/vm.rs` usa el compilador y la VM.También se verifica que la salida sea la misma en las dos ejecuciones.
+Los tests corren los programas encontrados en `tests/test-programs/`, los cuales son equivalentes a los provistos por la cátedra, adaptados para el lenguaje `rabi`. Cada programa se ejecuta con los dos backends: `tests/interpreter.rs` usa el intérprete y `tests/vm.rs` usa el compilador y la VM. También se verifica que la salida sea la misma en las dos ejecuciones.
 
 ## Benchmark
 Se encuentra adjunto un benchmark. Se implementó un mismo programa en rabi, Python y Rust. Para correrlo y ver los tiempos de ejecución, se puede usar el siguiente comando:

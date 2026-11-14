@@ -120,7 +120,7 @@ Como era de esperar, el más rápido fue el programa compilado en Rust, seguido 
 
 Podemos observar que el intérprete de `rabi` es aproximadamente 2.6 veces más lento que el intérprete de Python. Aún considerando que el intérprete de Python es un proyecto mucho más grande y maduro, personalmente considero que la performance medida no está nada mal, teniendo en cuenta que no se agregaron optimizaciones de ningún tipo. 
 
-La intención de este benchmark es meramente ilustrativo y no pretende analizar o criticar en profundida el desempeño de los lenguajes. Servirá para contrastar contra la versión compilada del lenguaje que se implementará en la entrega final, y ver si el desempeño es comparable al de un lenguaje compilado.
+La intención de este benchmark es meramente ilustrativo y no pretende analizar o criticar en profundidad el desempeño de los lenguajes. Servirá para contrastar contra la versión compilada del lenguaje que se implementará en la entrega final, y ver si el desempeño es comparable al de un lenguaje compilado.
 
 Para mejorar la performance del intérprete se podrían implementar optimizaciones como un *resolver* de variables que evite la búsqueda de variables en scopes padres.
 

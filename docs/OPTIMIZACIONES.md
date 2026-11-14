@@ -54,7 +54,7 @@ Como este proyecto es académico y no de producción, decidí quitar la optimiza
 
 ### Resultado de las optimizaciones a la VM
 
-Después de aplicar todas las optimizaciones, la VM terminó siendo alrededor de 2 veces más rápida que el intérprete (296 ms contra 602 ms en `make bench`).
+Después de aplicar todas las optimizaciones, la VM terminó siendo alrededor de 2 veces más rápida que el intérprete (280 ms contra 602 ms en `make bench`).
 
 ![Gráfico de barras con la reducción del tiempo de ejecución de cada optimización](img/impacto-optimizaciones.svg)
 

@@ -16,7 +16,7 @@
   - [Compilador de bytecode](#compilador-de-bytecode)
     - [Detalles de implementación](#detalles-de-implementación)
       - [Bytecode como Enum de Rust](#bytecode-como-enum-de-rust)
-      - [Cortocircuito y operaciones compuestas](#cortocircuito-y-operaciones-compuestas)
+      - [Operaciones compuestas y cortocircuito](#operaciones-compuestas-y-cortocircuito)
       - [`break` y `continue`](#break-y-continue)
       - [Valores compartidos entre intérprete y VM](#valores-compartidos-entre-intérprete-y-vm)
     - [Resultados de benchmarking](#resultados-de-benchmarking)
@@ -30,7 +30,7 @@
 
 ## Introducción
 
-En esta entrega final se trabajó diferentes aspectos del trabajo practico, entre ellos:
+En esta entrega final se trabajó diferentes aspectos del trabajo práctico, entre ellos:
 - Documentación completa del lenguaje
 - Una implementación del lenguaje con compilador a bytecode
 - Optimizaciones
@@ -88,12 +88,12 @@ El hecho de convertir un valor a su equivalente booleano según si es *thruthy*,
 
 Esto lo hice con la intención de mantener chico el set de instrucciones, lo que simplifica tanto el compilador como la VM, pero en contraparte hace que se tenga que ejecutar una instrucción de más en cada caso. Si se desease optimizar aún más la VM, podrían agregarse varias instrucciones combinadas que hagan el efecto de ejecutar varias juntas.
 
-Otro factor interesante a mencionar es que como los saltos guardan la distancia en su operando de 2 bytes, un salto puede cubrir como máximo 65535 instrucciones. Esto limita el tamaño de los bloques de condicionales y bucles, aunque es difícil alcanzarlo en un programa real. En [SEMANTICA.md](SEMANTICA.md#bloques-e-indentación) se aclaré que el lenguaje deja abierto a la implementación el tamaño máximo de bloque.
+Otro factor interesante a mencionar es que como los saltos guardan la distancia en su operando de 2 bytes, un salto puede cubrir como máximo 65535 instrucciones. Esto limita el tamaño de los bloques de condicionales y bucles, aunque es difícil alcanzarlo en un programa real. En [SEMANTICA.md](SEMANTICA.md#bloques-e-indentación) se aclara que el lenguaje deja abierto a la implementación el tamaño máximo de bloque.
 
 #### `break` y `continue`
 Un caso que me costó un poco implementar, sobre todo porque no había ejemplo en la implementación de la cátedra, fue el caso de `break` y `continue`. 
 
-Para compilarlos el compilador lleva una pila con los bucles en los que s se encuentra (`for row in rows: for col in row: ...` tendrá una pila de 2 elementos), cada uno con una referencia al número de instrucción inicial, la  profundidad de scope, y una lista de los `break` emitidos.<br>
+Para compilarlos el compilador lleva una pila con los bucles en los que se encuentra (`for row in rows: for col in row: ...` tendrá una pila de 2 elementos), cada uno con una referencia al número de instrucción inicial, la profundidad de scope, y una lista de los `break` emitidos.<br>
 `continue` se compila como un salto con destino al inicio del bucle más interno.<br>
 `break`, en cambio, salta al final del bucle, que todavía no se conoce cuando se emite el `break`, por lo que el salto se emite con un destino provisorio y se corrige al terminar de compilar el bucle. <br>
 En ambos casos, antes de saltar se descartan de la pila las variables locales declaradas dentro del bucle.
@@ -182,7 +182,7 @@ Lo elegí porque usa casi todo el lenguaje (funciones, arrays, bucles `for` y `w
 ## Conclusión
 Uno de los resultados que más me llamó la atención del trabajo fue que, al terminar la VM resultó ser 1,44 veces **más lenta** que el intérprete. Recién después de aplicar las optimizaciones pasó a ser unas 2 veces más rápida. A priori parecería que la mejora de performance no vino del cambio de método de implementación (intérprete a VM) sino de la aplicación de optimizaciones. Para mí esto tenía sentido, ya que al final del día ambos son programas escritos en el mismo lenguaje, que hacen prácticamente lo mismo de dos maneras diferentes. 
 
-Sin embargo, también hay que tener en cuenta que esas "optimizaciones" fueron en su mayoría más bien correcciones de ineficiencias en la implementación (copiadoo de variables de forma innecesaria, cambiar a una función de hash más rápida). Por lo tanto, creo que se podría decir que la VM sí supone una ventaja en eficiencia sobre el intérprete, pero hay que implementar una buena VM para que realmente haya diferencia. 
+Sin embargo, también hay que tener en cuenta que esas "optimizaciones" fueron en su mayoría más bien correcciones de ineficiencias en la implementación (copiado de variables de forma innecesaria, cambiar a una función de hash más rápida). Por lo tanto, creo que se podría decir que la VM sí supone una ventaja en eficiencia sobre el intérprete, pero hay que implementar una buena VM para que realmente haya diferencia. 
 
 Luego, al investigar un poco más sobre el tema en internet y en el libro de la cátedra, descubrí que en efecto es así: <br>
 Por un lado, al representar el código de una forma más compacta y plana, que se recorre secuencialmente en lugar de recursivamente, se pueden aprovechar mejor las funciones optimizadas del CPU, como las diferentes tiers de caché (aunque obviamente nunca tanto como si estuviera compilado a código de máquina). <br>
