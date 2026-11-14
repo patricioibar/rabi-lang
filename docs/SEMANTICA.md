@@ -1,3 +1,5 @@
+<img src="img/rabi.png" width="90" align="right" alt="Logo de rabi: un conejo amarillo dibujado en pixel art">
+
 # Semántica de rabi
 
 ## Índice

@@ -1,3 +1,5 @@
+<img src="docs/img/rabi.png" width="90" align="right" alt="Logo de rabi: un conejo amarillo dibujado en pixel art">
+
 # rabi-lang
 
 Un lenguaje de programación básico implementado en Rust.
