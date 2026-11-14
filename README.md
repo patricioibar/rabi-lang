@@ -23,7 +23,7 @@ make
 ## Uso
 
 ```bash
-rabi [ --backend interpreter | --backend vm ] [ --scanning | --parsing ] [ <archivo> ]
+rabi [ --backend interpreter | --backend vm ] [ --scanning | --parsing | --bytecode ] [ <archivo> ]
 ```
 
 Si se provee un archivo, el programa lo ejecutará y mostrará el resultado en la salida estándar. Sin archivo, abre el modo interactivo (REPL) que conserva las variables y funciones entre entradas.
@@ -43,7 +43,11 @@ El parámetro `--backend` elige cómo se ejecuta el programa:
 
 ### Etapas intermedias
 
-Los parámetros de `scanning` y `parsing` son mutuamente excluyentes. Si se provee alguno de ellos, el programa detendrá la ejecución en la etapa correspondiente y mostrará el resultado en la salida estándar. En ese caso `--backend` no tiene efecto.
+Los parámetros de `scanning`, `parsing` y `bytecode` son mutuamente excluyentes. Si se provee alguno de ellos, el programa detendrá la ejecución en la etapa correspondiente y mostrará el resultado en la salida estándar. En ese caso `--backend` no tiene efecto.
+
+- `--scanning`: muestra los tokens que produce el scanner.
+- `--parsing`: muestra el AST que produce el parser, antes de optimizar.
+- `--bytecode`: optimiza, compila y muestra el bytecode desensamblado (el mismo que ejecuta la VM), con una sección por función.
 
 ## Entrega parcial - Intérprete
 

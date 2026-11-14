@@ -3,6 +3,7 @@ use std::io::{BufReader, Write};
 use clap::{Parser, ValueEnum};
 
 use rabi::{
+    bytecode::Function,
     compiler,
     interpreter::Interpreter,
     optimizer, parser,
@@ -20,12 +21,16 @@ mod mode;
 #[command(name = "rabi")]
 struct Args {
     /// Executes lexical analysis.
-    #[arg(long, conflicts_with = "parsing")]
+    #[arg(long, conflicts_with_all = ["parsing", "bytecode"])]
     scanning: bool,
 
     /// Executes syntactic analysis.
-    #[arg(long, conflicts_with = "scanning")]
+    #[arg(long, conflicts_with_all = ["scanning", "bytecode"])]
     parsing: bool,
+
+    /// Compiles to bytecode and disassembles it.
+    #[arg(long, conflicts_with_all = ["scanning", "parsing"])]
+    bytecode: bool,
 
     /// Execution backend.
     #[arg(long, value_enum, default_value_t = Backend::Interpreter)]
@@ -59,13 +64,14 @@ impl Runner {
     fn run(&mut self, statements: Vec<Statement>) -> Result<(), String> {
         match self {
             Runner::Interpreter(interpreter) => interpreter.run(&statements),
-            Runner::Vm(vm) => {
-                let script = compiler::compile(optimizer::optimize(statements))
-                    .map_err(|e| format!("Error compiling: {}", e))?;
-                vm.run(script)
-            }
+            Runner::Vm(vm) => vm.run(compile(statements)?),
         }
     }
+}
+
+fn compile(statements: Vec<Statement>) -> Result<Function, String> {
+    compiler::compile(optimizer::optimize(statements))
+        .map_err(|e| format!("Error compiling: {}", e))
 }
 
 fn main() -> Result<(), i32> {
@@ -151,6 +157,12 @@ fn run_tokens(tokens: Vec<Token>, mode: &Mode, runner: &mut Runner) -> Result<()
         for statement in statements {
             println!("{:?}", statement);
         }
+        return Ok(());
+    }
+
+    if mode == &Mode::Bytecode {
+        let script = compile(statements)?;
+        print!("{}", script.chunk.disassemble(&script.name));
         return Ok(());
     }
 
