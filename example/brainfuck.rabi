@@ -1,0 +1,161 @@
+# Intérprete de Brainfuck escrito en rabi.
+#
+# Brainfuck tiene ocho instrucciones (> < + - . , [ ]) que operan sobre una
+# cinta de celdas de 8 bits y un puntero. Es Turing-completo, así que un
+# intérprete de Brainfuck que funcione alcanza para mostrar que rabi también
+# lo es.
+
+let CELDAS = 30000
+let MODULO_CELDA = 256
+
+let DIGITOS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
+# Caracteres imprimibles, indexados por código ASCII
+let ASCII = [" ", "!", "", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/"]
+ASCII = ASCII + ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+ASCII = ASCII + [":", ";", "<", "=", ">", "?", "@"]
+ASCII = ASCII + ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M"]
+ASCII = ASCII + ["N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+ASCII = ASCII + ["[", "\", "]", "^", "_", "`"]
+ASCII = ASCII + ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
+ASCII = ASCII + ["n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+ASCII = ASCII + ["{", "|", "}", "~"]
+
+let PRIMER_IMPRIMIBLE = 32
+let SALTO_DE_LINEA = 10
+
+let salida = ""
+let entrada = []
+let entrada_leida = 0
+
+
+func a_texto(n):
+    if n < 10: return DIGITOS[n]
+    return a_texto(n / 10) + DIGITOS[n % 10]
+
+
+func codigo_de(caracter):
+    let i = 0
+    while i < len ASCII:
+        if ASCII[i] == caracter: return i + PRIMER_IMPRIMIBLE
+        i = i + 1
+    return 0
+
+
+func emitir(codigo):
+    if codigo == SALTO_DE_LINEA:
+        print salida
+        salida = ""
+        return
+    let posicion = codigo - PRIMER_IMPRIMIBLE
+    if posicion < 0 or posicion >= len ASCII: return
+    salida = salida + ASCII[posicion]
+
+
+func mostrar_salida():
+    if salida != "":
+        print salida
+        salida = ""
+
+
+func leer():
+    if entrada_leida >= len entrada: return 0
+    let caracter = entrada[entrada_leida]
+    entrada_leida = entrada_leida + 1
+    return codigo_de(caracter)
+
+
+# Devuelve un array donde la posición de cada corchete guarda la de su par.
+# Se resuelve de la misma forma en que el compilador de rabi parchea los
+# saltos de `break`, se apila la posición de cada `[` y al encontrar el `]`
+# que lo cierra se completan los dos.
+func resolver_saltos(programa):
+    let saltos = [0] * len programa
+    let pila = [0] * len programa
+    let tope = 0
+    let i = 0
+    while i < len programa:
+        let simbolo = programa[i]
+        if simbolo == "[":
+            pila[tope] = i
+            tope = tope + 1
+        else if simbolo == "]":
+            if tope == 0:
+                print "error: ] sin [ en la posición " + a_texto(i)
+                return []
+            tope = tope - 1
+            let apertura = pila[tope]
+            saltos[apertura] = i
+            saltos[i] = apertura
+        i = i + 1
+    if tope != 0:
+        print "error: [ sin cerrar en la posición " + a_texto(pila[tope - 1])
+        return []
+    return saltos
+
+
+func ejecutar(programa):
+    let saltos = resolver_saltos(programa)
+    if len saltos != len programa: return false
+    let cinta = [0] * CELDAS
+    let puntero = 0
+    let i = 0
+    while i < len programa:
+        let simbolo = programa[i]
+        if simbolo == ">":
+            puntero = puntero + 1
+            if puntero >= CELDAS: puntero = 0
+        else if simbolo == "<":
+            puntero = puntero - 1
+            if puntero < 0: puntero = CELDAS - 1
+        else if simbolo == "+":
+            cinta[puntero] = (cinta[puntero] + 1) % MODULO_CELDA
+        else if simbolo == "-":
+            cinta[puntero] = (cinta[puntero] + MODULO_CELDA - 1) % MODULO_CELDA
+        else if simbolo == ".":
+            emitir(cinta[puntero])
+        else if simbolo == ",":
+            cinta[puntero] = leer()
+        else if simbolo == "[":
+            if cinta[puntero] == 0: i = saltos[i]
+        else if simbolo == "]":
+            if cinta[puntero] != 0: i = saltos[i]
+        i = i + 1
+    mostrar_salida()
+    return true
+
+
+func correr(nombre, programa, entrada_del_programa):
+    salida = ""
+    entrada = entrada_del_programa
+    entrada_leida = 0
+    print "--- " + nombre + " (" + a_texto(len programa) + " instrucciones) ---"
+    ejecutar(programa)
+    print ""
+
+
+print "Intérprete de Brainfuck en rabi"
+print ""
+
+# Programa de ejemplo: Hola Mundo
+
+# ++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.
+# <-.<.+++.------.--------.>>+.>++.
+let HOLA = ["+"] * 8 + ["["] + [">"] + ["+"] * 4
+HOLA = HOLA + ["["] + [">"] + ["+"] * 2 + [">"] + ["+"] * 3 + [">"] + ["+"] * 3
+HOLA = HOLA + [">"] + ["+"] + ["<"] * 4 + ["-"] + ["]"]
+HOLA = HOLA + [">"] + ["+"] + [">"] + ["+"] + [">"] + ["-"] + [">"] * 2 + ["+"]
+HOLA = HOLA + ["["] + ["<"] + ["]"] + ["<"] + ["-"] + ["]"]
+HOLA = HOLA + [">"] * 2 + ["."] + [">"] + ["-"] * 3 + ["."] + ["+"] * 7 + ["."] * 2 + ["+"] * 3 + ["."]
+HOLA = HOLA + [">"] * 2 + ["."] + ["<"] + ["-"] + ["."] + ["<"] + ["."] + ["+"] * 3 + ["."]
+HOLA = HOLA + ["-"] * 6 + ["."] + ["-"] * 8 + ["."] + [">"] * 2 + ["+"] + ["."] + [">"] + ["+"] * 2 + ["."]
+
+correr("hola mundo", HOLA, [])
+
+
+# Programa de ejemplo: Eco de la entrada
+# ,[.,] : copia la entrada a la salida hasta encontrar un 0
+let ECO = [","] + ["["] + ["."] + [","] + ["]"]
+ECO = ECO + [">"] + ["+"] * 10 + ["."]
+
+correr("eco de la entrada", ECO, ["r", "a", "b", "i"])

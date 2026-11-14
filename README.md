@@ -51,6 +51,19 @@ Los parámetros de `scanning`, `parsing` y `bytecode` son mutuamente excluyentes
 - `--parsing`: muestra el AST que produce el parser, antes de optimizar.
 - `--bytecode`: optimiza, compila y muestra el bytecode desensamblado (el mismo que ejecuta la VM), con una sección por función.
 
+## Ejemplos
+
+En [`example/`](example/) hay dos programas escritos en rabi:
+
+- [`example/brainfuck.rabi`](example/brainfuck.rabi): un intérprete de Brainfuck escrito enteramente en rabi.
+- [`example/tateti.rabi`](example/tateti.rabi): un ta-te-ti por consola para dos jugadores, que usa la expresión `input`.
+
+```bash
+make run FILE=example/brainfuck.rabi
+```
+
+Las instrucciones completas están en el [README de los ejemplos](example/README.md).
+
 ## Entrega parcial - Intérprete
 
 Leer [ENTREGA_PARCIAL.md](docs/ENTREGA_PARCIAL.md) para más información sobre la entrega parcial del proyecto.

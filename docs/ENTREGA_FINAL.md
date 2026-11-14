@@ -23,6 +23,8 @@
   - [Optimizaciones](#optimizaciones)
   - [Feature `input`](#feature-input)
   - [Caso de uso](#caso-de-uso)
+    - [Un intérprete de Brainfuck escrito en rabi](#un-intérprete-de-brainfuck-escrito-en-rabi)
+    - [Ta-te-ti](#ta-te-ti)
   - [Conclusión](#conclusión)
  
 
@@ -134,7 +136,34 @@ La estrategia seguida y más detalle de las optimizaciones realizadas se encuent
 Agregué una nueva expresión para obtener input de parte del usuario. La razón principal fue el hacer un programa interactivo para el caso de uso.
 
 ## Caso de uso
-Como caso de uso del lenguaje implementé un muy pequeño juego, un ta-te-ti por consola para dos jugadores. El programa se encuentra en [`example/tateti.rabi`](../example/tateti.rabi), y las instrucciones para correrlo y jugar en el [README del ejemplo](../example/README.md).
+
+### Un intérprete de Brainfuck escrito en rabi
+
+El caso de uso principal es un intérprete de Brainfuck escrito enteramente en rabi: [`example/brainfuck.rabi`](../example/brainfuck.rabi). 
+
+Brainfuck s un lenguaje Turing-completo, así que si rabi puede ejecutar cualquier programa de Brainfuck, entonces se puede decir son equivalentes y por lo tanto se está demostrando que rabi también es Turing-completo. El intérprete implementa las ocho instrucciones del lenguaje (`>`, `<`, `+`, `-`, `.`, `,`, `[`, `]`) sobre una cinta de 30000 celdas de 8 bits, resuelve los corchetes antes de ejecutar y reporta los que están desbalanceados indicando la posición.
+
+```
+$ rabi example/brainfuck.rabi
+Intérprete de Brainfuck en rabi
+
+--- hola mundo (106 instrucciones) ---
+Hello World!
+
+--- eco de la entrada (17 instrucciones) ---
+rabi
+```
+
+Me pareció gracioso hacer una implementación de un pequeño lenguaje usando mi propio lenguaje para demostrar que puede servir como herramienta de uso general, tanto para programar pequeños scripts como para herramientas un poco más complejas y útiles.
+
+Al escribir este programa me topé principalmente con dos límites de rabi que no había notado:q
+
+- **No se pueden indexar strings**, así que un string es un valor opaco y no hay forma de recorrerlo carácter por carácter. Por eso el programa de Brainfuck se representa como un array de strings de un carácter y no como un string. Esto supuso un problema principalmente porque provoca que el intérprete no pueda leer un programa desde la entrada estándar, ya que `input` devuelve un string que después no puede descomponer.
+- **No hay secuencias de escape** (ver [Literales](GRAMATICA.md#literales)) y las comillas dobles son el único delimitador de strings, así que no existe forma de escribir el carácter `"` en un literal.
+
+### Ta-te-ti
+
+Como segundo ejemplo, más chico, dejé el ta-te-ti por consola para dos jugadores que escribí junto con la feature `input`. El programa está en [`example/tateti.rabi`](../example/tateti.rabi), y las instrucciones para correrlo y jugar en el [README del ejemplo](../example/README.md).
 
 El juego dibuja el tablero, pide a cada jugador la casilla en la que quiere jugar (con `input`), valida la jugada, y detecta cuándo alguien gana o hay empate. Al terminar cada partida se muestra un marcador y se pregunta si se quiere jugar otra.
 
@@ -148,9 +177,7 @@ El juego dibuja el tablero, pide a cada jugador la casilla en la que quiere juga
 Turno de X. Elegí una casilla (1-9):
 ```
 
-rabi es un lenguaje muy pequeño y con bastantes pocas features, por eso no creo que tiene mucho sentido buscarle un caso de uso productivo para la realidad. El mejor caso de uso que se me ocurrió es que puede utilizarse con fines didácticos (aprender a programar).
-
-Elegí hacer un juego interactivo porque me pareció que podría ser un buen primer programa "completo" que un alumno podría realizar, y porque usa casi todo el lenguaje: funciones, arrays, bucles `for` y `while`, condicionales y variables globales.
+Lo elegí porque usa casi todo el lenguaje (funciones, arrays, bucles `for` y `while`, condicionales y variables globales) y porque me parece un buen primer programa "completo" para alguien que está aprendiendo a programar, que es el otro uso que le veo a rabi.
 
 ## Conclusión
 Uno de los resultados que más me llamó la atención del trabajo fue que, al terminar la VM resultó ser 1,44 veces **más lenta** que el intérprete. Recién después de aplicar las optimizaciones pasó a ser unas 2 veces más rápida. A priori parecería que la mejora de performance no vino del cambio de método de implementación (intérprete a VM) sino de la aplicación de optimizaciones. Para mí esto tenía sentido, ya que al final del día ambos son programas escritos en el mismo lenguaje, que hacen prácticamente lo mismo de dos maneras diferentes. 
@@ -161,5 +188,5 @@ Luego, al investigar un poco más sobre el tema en internet y en el libro de la 
 Por un lado, al representar el código de una forma más compacta y plana, que se recorre secuencialmente en lugar de recursivamente, se pueden aprovechar mejor las funciones optimizadas del CPU, como las diferentes tiers de caché (aunque obviamente nunca tanto como si estuviera compilado a código de máquina). <br>
 También se abre ventana a muchas más optimizaciones que serían más difíciles de aplicar en un AST, como la utilización de instrucciones combinadas, o incluso la traducción directa a código de máquina usando estrategias como un Just In Time compiler.
 
-Por último, como mencioné en la sección del caso de uso, `rabi` sigue siendo un lenguaje muy pequeño y con pocas features, y no creo que tenga sentido buscarle un uso productivo. Lo que sí me parece valioso es su uso didáctico: tiene una sintaxis simple, parecida a Python, una semántica completamente documentada y sin casos raros (por ejemplo, la ausencia de closures hace que lo que ve una función dependa solamente de sus parámetros, sus variables locales y las globales), y alcanza para escribir programas pequeños. Creo que podría ser un buen lenguaje para alguien que está aprendiendo a programar.
- 
+Sobre el caso de uso, `rabi` sigue siendo un lenguaje muy pequeño y con pocas features, pero aún así tiene herramientas muy útiles (arrays, funciones, recursión) que alcanzan para escribir programas complejos, por ejemplo un programa que entiende y ejecuta programas escritos en otro lenguaje. Si bien podría argumentarse que siempre va a ser una mejor opción usar un lenguaje conocido y mantenido por un equipo profesional, creo que se le puede dar un buen uso a `rabi` para construir scripts y herramientas de software. <br>
+Además de eso, creo que `rabi` podría tener un buen uso didáctico: tiene una sintaxis simple, parecida a Python, y una semántica completamente documentada y sin casos raros (por ejemplo, la ausencia de closures hace que lo que ve una función dependa solamente de sus parámetros, sus variables locales y las globales). Creo que podría ser un buen lenguaje para alguien que está aprendiendo a programar.
