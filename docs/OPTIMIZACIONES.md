@@ -54,6 +54,8 @@ Como este proyecto es académico y no de producción, decidí quitar la optimiza
 
 Después de aplicar todas las optimizaciones, la VM terminó siendo alrededor de 2 veces más rápida que el intérprete (296 ms contra 602 ms en `make bench`).
 
+![Gráfico de barras con la reducción del tiempo de ejecución de cada optimización](img/impacto-optimizaciones.svg)
+
 # Optimizaciones sobre el código generado
 
 Finalmente, decidí implementar la optimización **Constant Folding** sobre el código generado. Decidí implementarla para probar cómo se realizaría la optimización más que por el rendimiento en sí.

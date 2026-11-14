@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="278" viewBox="0 0 840 278" font-family="system-ui, -apple-system, Segoe UI, sans-serif" role="img" aria-labelledby="titulo desc">
+<title id="titulo">Tiempo del benchmark por implementación</title>
+<desc id="desc">Barras horizontales en milisegundos: Rust 10 ms, Python 3.14.7 214 ms, rabi VM 280 ms, rabi intérprete 602 ms.</desc>
+<rect width="840" height="278" fill="#fcfcfb"/>
+<rect x="0.5" y="0.5" width="839" height="277" fill="none" stroke="#e1e0d9"/>
+<text x="24.0" y="34.0" font-size="17" fill="#0b0b0b" text-anchor="start" font-weight="600">Tiempo del benchmark por implementación</text>
+<line x1="215.0" y1="70.0" x2="215.0" y2="242.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="215.0" y="262.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">0</text>
+<line x1="296.5" y1="70.0" x2="296.5" y2="242.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="296.5" y="262.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">100</text>
+<line x1="378.1" y1="70.0" x2="378.1" y2="242.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="378.1" y="262.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">200</text>
+<line x1="459.6" y1="70.0" x2="459.6" y2="242.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="459.6" y="262.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">300</text>
+<line x1="541.2" y1="70.0" x2="541.2" y2="242.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="541.2" y="262.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">400</text>
+<line x1="622.7" y1="70.0" x2="622.7" y2="242.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="622.7" y="262.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">500</text>
+<line x1="704.2" y1="70.0" x2="704.2" y2="242.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="704.2" y="262.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">600</text>
+<line x1="215.0" y1="70.0" x2="215.0" y2="242.0" stroke="#c3c2b7" stroke-width="1"/>
+<path d="M 215.0 78.5 H 219.2 Q 223.2 78.5 223.2 82.5 V 100.5 Q 223.2 104.5 219.2 104.5 H 215.0 Z" fill="#2a78d6"/>
+<text x="201.0" y="96.0" font-size="13" fill="#0b0b0b" text-anchor="end" font-weight="400">Rust (compilado, -O)</text>
+<text x="233.2" y="96.0" font-size="13" fill="#0b0b0b" text-anchor="start" font-weight="600" style="font-variant-numeric: tabular-nums">10 ms</text>
+<path d="M 215.0 121.5 H 385.5 Q 389.5 121.5 389.5 125.5 V 143.5 Q 389.5 147.5 385.5 147.5 H 215.0 Z" fill="#2a78d6"/>
+<text x="201.0" y="139.0" font-size="13" fill="#0b0b0b" text-anchor="end" font-weight="400">Python 3.14.7 (CPython)</text>
+<text x="399.5" y="139.0" font-size="13" fill="#0b0b0b" text-anchor="start" font-weight="600" style="font-variant-numeric: tabular-nums">214 ms</text>
+<path d="M 215.0 164.5 H 439.3 Q 443.3 164.5 443.3 168.5 V 186.5 Q 443.3 190.5 439.3 190.5 H 215.0 Z" fill="#2a78d6"/>
+<text x="201.0" y="182.0" font-size="13" fill="#0b0b0b" text-anchor="end" font-weight="400">rabi VM (release)</text>
+<text x="453.3" y="182.0" font-size="13" fill="#0b0b0b" text-anchor="start" font-weight="600" style="font-variant-numeric: tabular-nums">280 ms</text>
+<path d="M 215.0 207.5 H 701.9 Q 705.9 207.5 705.9 211.5 V 229.5 Q 705.9 233.5 701.9 233.5 H 215.0 Z" fill="#2a78d6"/>
+<text x="201.0" y="225.0" font-size="13" fill="#0b0b0b" text-anchor="end" font-weight="400">rabi intérprete (release)</text>
+<text x="715.9" y="225.0" font-size="13" fill="#0b0b0b" text-anchor="start" font-weight="600" style="font-variant-numeric: tabular-nums">602 ms</text>
+</svg>

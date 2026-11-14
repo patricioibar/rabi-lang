@@ -107,6 +107,8 @@ Las mediciones se tomaron en la misma notebook que en la entrega parcial (Intel 
 | `rabi` VM (release) | **280 ms** |
 | `rabi` intérprete (release) | **602 ms** |
 
+![Gráfico de barras horizontales con el tiempo del benchmark por implementación: Rust 10 ms, Python 3.14.7 214 ms, rabi VM 280 ms y rabi intérprete 602 ms](img/benchmark-implementaciones.svg)
+
 El benchmark también desglosa el tiempo de `rabi` por fase (no incluido en la tabla). El scanning, el parsing, la optimización y la compilación juntos tardan menos de 0,1 ms, así que prácticamente todo el tiempo se va en la ejecución.
 
 Luego de las [optimizaciones](#optimizaciones), la VM resultó aproximadamente 2,15 veces más rápida que el intérprete. Sin embargo, antes de optimizarla era más lenta (ver [Conclusión](#conclusión)).
@@ -117,6 +119,7 @@ Comparada con CPython, la VM de `rabi` es aproximadamente 1,3 veces más lenta. 
 
 En la entrega parcial se planteó la pregunta de si la versión compilada iba a tener un desempeño comparable al de un lenguaje compilado. La respuesta es (claramente) que no: Rust sigue siendo unas 28 veces más rápido que la VM. Esto es esperable, ya que `rabi` compila a bytecode que luego se interpreta en una VM implementada en Rust, mientras que Rust compila directamente a código máquina nativo y por lo tanto se ejecuta mucho más eficientemente.
 
+![Gráfico de barras verticales con la evolución del tiempo de la VM: 1363 ms sin optimizar, 678 ms tras la primera optimización y 280 ms en la versión final, con dos líneas de referencia del intérprete en 945 ms y 602 ms](img/evolucion-vm.svg)
 
 ## Optimizaciones
 Inmediatamente después de terminar el compilador de bytecode, resultó ser mucho más lento que el intérprete implementado en la primera parte del TP. Debido a esto, le dediqué tiempo a aplicar optimizaciones a la VM. 

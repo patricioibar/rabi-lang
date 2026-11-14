@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="870" height="308" viewBox="0 0 870 308" font-family="system-ui, -apple-system, Segoe UI, sans-serif" role="img" aria-labelledby="titulo desc">
+<title id="titulo">Impacto de cada optimización de la VM</title>
+<desc id="desc">Reducción del tiempo de ejecución por optimización: globales sin copiar el nombre 50 %, hasher rápido para las globales 21,6 %, copiar los valores una sola vez 15 % con globales y 33 % con locales, LTO 12,1 % con locales.</desc>
+<rect width="870" height="308" fill="#fcfcfb"/>
+<rect x="0.5" y="0.5" width="869" height="307" fill="none" stroke="#e1e0d9"/>
+<text x="24.0" y="34.0" font-size="17" fill="#0b0b0b" text-anchor="start" font-weight="600">Impacto de cada optimización de la VM</text>
+<rect x="24" y="56" width="11" height="11" rx="2" fill="#2a78d6"/>
+<text x="41.0" y="66.0" font-size="12" fill="#52514e" text-anchor="start" font-weight="400">benchmark con variables globales</text>
+<rect x="278.4" y="56" width="11" height="11" rx="2" fill="#eb6834"/>
+<text x="295.4" y="66.0" font-size="12" fill="#52514e" text-anchor="start" font-weight="400">benchmark con variables locales</text>
+<line x1="262.0" y1="96.0" x2="262.0" y2="272.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="262.0" y="292.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">0 %</text>
+<line x1="355.1" y1="96.0" x2="355.1" y2="272.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="355.1" y="292.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">10 %</text>
+<line x1="448.2" y1="96.0" x2="448.2" y2="272.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="448.2" y="292.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">20 %</text>
+<line x1="541.3" y1="96.0" x2="541.3" y2="272.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="541.3" y="292.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">30 %</text>
+<line x1="634.4" y1="96.0" x2="634.4" y2="272.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="634.4" y="292.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">40 %</text>
+<line x1="727.5" y1="96.0" x2="727.5" y2="272.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="727.5" y="292.0" font-size="11" fill="#898781" text-anchor="middle" font-weight="400" style="font-variant-numeric: tabular-nums">50 %</text>
+<line x1="262.0" y1="96.0" x2="262.0" y2="272.0" stroke="#c3c2b7" stroke-width="1"/>
+<text x="248.0" y="122.5" font-size="13" fill="#0b0b0b" text-anchor="end" font-weight="400">1. Globales sin copiar el nombre</text>
+<path d="M 262.0 101.0 H 723.5 Q 727.5 101.0 727.5 105.0 V 113.0 Q 727.5 117.0 723.5 117.0 H 262.0 Z" fill="#2a78d6"/>
+<text x="736.5" y="113.5" font-size="12" fill="#0b0b0b" text-anchor="start" font-weight="600" style="font-variant-numeric: tabular-nums">−50 %</text>
+<text x="248.0" y="166.5" font-size="13" fill="#0b0b0b" text-anchor="end" font-weight="400">2. Hasher rápido para las globales</text>
+<path d="M 262.0 145.0 H 459.1 Q 463.1 145.0 463.1 149.0 V 157.0 Q 463.1 161.0 459.1 161.0 H 262.0 Z" fill="#2a78d6"/>
+<text x="472.1" y="157.5" font-size="12" fill="#0b0b0b" text-anchor="start" font-weight="600" style="font-variant-numeric: tabular-nums">−21,6 %</text>
+<text x="248.0" y="210.5" font-size="13" fill="#0b0b0b" text-anchor="end" font-weight="400">3. Copiar los valores una sola vez</text>
+<path d="M 262.0 189.0 H 397.6 Q 401.6 189.0 401.6 193.0 V 201.0 Q 401.6 205.0 397.6 205.0 H 262.0 Z" fill="#2a78d6"/>
+<text x="410.6" y="201.5" font-size="12" fill="#0b0b0b" text-anchor="start" font-weight="600" style="font-variant-numeric: tabular-nums">−15 %</text>
+<path d="M 262.0 207.0 H 565.2 Q 569.2 207.0 569.2 211.0 V 219.0 Q 569.2 223.0 565.2 223.0 H 262.0 Z" fill="#eb6834"/>
+<text x="578.2" y="219.5" font-size="12" fill="#0b0b0b" text-anchor="start" font-weight="600" style="font-variant-numeric: tabular-nums">−33 %</text>
+<text x="248.0" y="254.5" font-size="13" fill="#0b0b0b" text-anchor="end" font-weight="400">4. LTO</text>
+<path d="M 262.0 251.0 H 370.6 Q 374.6 251.0 374.6 255.0 V 263.0 Q 374.6 267.0 370.6 267.0 H 262.0 Z" fill="#eb6834"/>
+<text x="383.6" y="263.5" font-size="12" fill="#0b0b0b" text-anchor="start" font-weight="600" style="font-variant-numeric: tabular-nums">−12,1 %</text>
+</svg>
